@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Declutter.AI — Decide what stays</title>
+
+    <meta
+        name="description"
+        content="Declutter.AI helps you make smarter decisions about the things you own."
+    >
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- NAVIGATION -->
+    <header class="navbar">
+        <a href="#" class="logo">declutter<span>.ai</span></a>
+
+        <button class="nav-button" onclick="startApp()">
+            Try it
+        </button>
+    </header>
+
+
+    <!-- LANDING PAGE -->
+    <main id="landing">
+
+        <section class="hero">
+
+            <div class="hero-badge">
+                ✦ AI-powered decision making
+            </div>
+
+            <h1>
+                Decide what<br>
+                <span>stays.</span>
+            </h1>
+
+            <p class="hero-description">
+                Your AI-powered decision assistant for everything you own.
+                Upload an item, answer a few smart questions, and get a
+                personalized recommendation.
+            </p>
+
+            <button class="primary-button" onclick="startApp()">
+                Analyze an item
+                <span>→</span>
+            </button>
+
+            <p class="microcopy">
+                Keep · Sell · Donate · Recycle · Store
+            </p>
+
+        </section>
+
+
+        <!-- HOW IT WORKS -->
+        <section class="how-section">
+
+            <div class="section-heading">
+                <p class="eyebrow">HOW IT WORKS</p>
+                <h2>Less guessing.<br>Better decisions.</h2>
+            </div>
+
+            <div class="steps">
+
+                <div class="step">
+                    <div class="step-number">01</div>
+                    <div class="step-icon">📸</div>
+                    <h3>Upload</h3>
+                    <p>Show us the item you're unsure about.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">02</div>
+                    <div class="step-icon">✦</div>
+                    <h3>Tell us more</h3>
+                    <p>Answer a few questions personalized to your item.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">03</div>
+                    <div class="step-icon">◉</div>
+                    <h3>Get clarity</h3>
+                    <p>Receive an intelligent recommendation and the reasoning behind it.</p>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- APP -->
+    <main id="app" class="app hidden">
+
+        <!-- PROGRESS -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div id="progress"></div>
+            </div>
+
+            <p id="step-label">Step 1 of 4</p>
+        </div>
+
+
+        <!-- STEP 1 -->
+        <section id="step1" class="app-step">
+
+            <div class="app-heading">
+                <p class="eyebrow">STEP 01</p>
+                <h2>Show us your item.</h2>
+                <p>
+                    Upload a photo of something you're unsure about.
+                </p>
+            </div>
+
+            <label class="upload-box" for="imageInput">
+
+                <input
+                    type="file"
+                    id="imageInput"
+                    accept="image/*"
+                    onchange="previewImage(event)"
+                >
+
+                <div id="uploadContent">
+                    <div class="upload-icon">↑</div>
+
+                    <h3>Upload an image</h3>
+
+                    <p>
+                        Click to browse or drag your image here
+                    </p>
+                </div>
+
+                <img id="imagePreview" class="image-preview hidden">
+
+            </label>
+
+            <button
+                class="primary-button full"
+                onclick="nextStep(2)"
+                id="imageContinue"
+                disabled
+            >
+                Continue →
+            </button>
+
+        </section>
+
+
+        <!-- STEP 2 -->
+        <section id="step2" class="app-step hidden">
+
+            <div class="app-heading">
+                <p class="eyebrow">STEP 02</p>
+                <h2>What kind of item is this?</h2>
+                <p>
+                    We'll personalize the questions based on your answer.
+                </p>
+            </div>
+
+            <div class="category-grid">
+
+                <button onclick="selectCategory(this, 'Clothing')">
+                    👕
+                    <span>Clothing</span>
+                </button>
+
+                <button onclick="selectCategory(this, 'Electronics')">
+                    💻
+                    <span>Electronics</span>
+                </button>
+
+                <button onclick="selectCategory(this, 'Books')">
+                    📚
+                    <span>Books</span>
+                </button>
+
+                <button onclick="selectCategory(this, 'Beauty')">
+                    🧴
+                    <span>Beauty</span>
+                </button>
+
+                <button onclick="selectCategory(this, 'Home')">
+                    🏠
+                    <span>Home</span>
+                </button>
+
+                <button onclick="selectCategory(this, 'Hobby')">
+                    🎨
+                    <span>Hobby</span>
+                </button>
+
+            </div>
+
+            <button
+                class="primary-button full"
+                onclick="generateQuestions()"
+                id="categoryContinue"
+                disabled
+            >
+                Continue →
+            </button>
+
+        </section>
+
+
+        <!-- STEP 3 -->
+        <section id="step3" class="app-step hidden">
+
+            <div class="app-heading">
+                <p class="eyebrow">STEP 03</p>
+                <h2 id="questionTitle">Let's get to know your item.</h2>
+                <p>
+                    There are no right answers. Be honest.
+                </p>
+            </div>
+
+            <div id="questions"></div>
+
+            <button
+                class="primary-button full"
+                onclick="analyzeItem()"
+            >
+                Analyze my item →
+            </button>
+
+        </section>
+
+
+        <!-- STEP 4 -->
+        <section id="step4" class="app-step hidden">
+
+            <div class="result-card">
+
+                <p class="eyebrow">YOUR RESULT</p>
+
+                <div class="result-icon" id="resultIcon">
+                    ✦
+                </div>
+
+                <p class="recommendation-label">
+                    OUR RECOMMENDATION
+                </p>
+
+                <h2 id="recommendation">
+                    SELL
+                </h2>
+
+                <div class="confidence">
+                    <span>Confidence</span>
+                    <strong id="confidence">87%</strong>
+                </div>
+
+                <div class="reasoning">
+
+                    <h3>Why?</h3>
+
+                    <p id="reasoningText">
+                        You haven't used this item recently and
+                        already own similar items.
+                    </p>
+
+                </div>
+
+                <div class="result-actions">
+
+                    <button onclick="newItem()" class="secondary-button">
+                        Analyze another
+                    </button>
+
+                    <button onclick="saveItem()" class="primary-button">
+                        Save decision
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+        <p>declutter<span>.ai</span></p>
+        <small>Making decisions about your things a little easier.</small>
+    </footer>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>s
