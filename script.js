@@ -1,403 +1,826 @@
 let selectedCategory = "";
+let selectedRole = "";
 let uploadedImage = null;
+let currentQuestions = [];
 
 
 /* =========================================================
-   DECLUTTER.AI — DECISION FRAMEWORK v0.4
-   The goal is NOT to tell people what to throw away.
-   The goal is to help them understand whether an item
-   still belongs in their life.
+   DECLUTTER.AI — QUESTION ENGINE v0.5
 ========================================================= */
 
 
 /* =========================================================
-   QUESTIONS
+   CATEGORY → ROLE
 ========================================================= */
 
-const questionsByCategory = {
+const rolesByCategory = {
 
     Clothing: [
-
-        {
-            question: "When did you last wear this?",
-            weight: 1,
-            answers: [
-                { text: "Within the last week", score: 2 },
-                { text: "Within the last month", score: 1 },
-                { text: "1–6 months ago", score: 0 },
-                { text: "6–12 months ago", score: -1 },
-                { text: "More than a year ago", score: -2 },
-                { text: "I don't remember", score: -1 }
-            ]
-        },
-
-        {
-            question: "Why did you last wear it?",
-            weight: 2,
-            answers: [
-                { text: "I genuinely wanted to", score: 2 },
-                { text: "It was right for a specific occasion", score: 1 },
-                { text: "I needed something practical to wear", score: 0 },
-                { text: "I felt like I had to wear it", score: -1 },
-                { text: "Someone else chose it for me", score: -1 },
-                { text: "I don't remember", score: 0 }
-            ]
-        },
-
-        {
-            question: "If you didn't already own this, would you choose to bring it into your life today?",
-            weight: 3,
-            answers: [
-                { text: "Definitely", score: 3 },
-                { text: "Probably", score: 2 },
-                { text: "I'm not sure", score: 0 },
-                { text: "Probably not", score: -2 },
-                { text: "Definitely not", score: -3 }
-            ]
-        },
-
-        {
-            question: "Do you own something that already fills the same role?",
-            weight: 2,
-            answers: [
-                { text: "No", score: 2 },
-                { text: "Yes, one similar item", score: -1 },
-                { text: "Yes, several similar items", score: -2 }
-            ]
-        },
-
-        {
-            question: "Would you genuinely miss this if it disappeared tomorrow?",
-            weight: 3,
-            answers: [
-                { text: "Definitely", score: 3 },
-                { text: "Probably", score: 2 },
-                { text: "I'm not sure", score: 0 },
-                { text: "Probably not", score: -2 },
-                { text: "Not at all", score: -3 }
-            ]
-        }
+        "Everyday",
+        "Special occasion",
+        "Work / school",
+        "Sports",
+        "Seasonal",
+        "Sentimental",
+        "Other"
     ],
-
-
-    Electronics: [
-
-        {
-            question: "When did you last use this because you wanted to?",
-            weight: 1,
-            answers: [
-                { text: "Within the last week", score: 2 },
-                { text: "Within the last month", score: 1 },
-                { text: "1–6 months ago", score: 0 },
-                { text: "6–12 months ago", score: -1 },
-                { text: "More than a year ago", score: -2 },
-                { text: "I don't remember", score: -1 }
-            ]
-        },
-
-        {
-            question: "Does it still work the way you need it to?",
-            weight: 2,
-            answers: [
-                { text: "Yes, perfectly", score: 2 },
-                { text: "Mostly", score: 1 },
-                { text: "It has some limitations", score: -1 },
-                { text: "Not really", score: -2 },
-                { text: "No", score: -3 }
-            ]
-        },
-
-        {
-            question: "If you didn't already own this, would you choose to buy it today?",
-            weight: 3,
-            answers: [
-                { text: "Definitely", score: 3 },
-                { text: "Probably", score: 2 },
-                { text: "I'm not sure", score: 0 },
-                { text: "Probably not", score: -2 },
-                { text: "Definitely not", score: -3 }
-            ]
-        },
-
-        {
-            question: "Do you already have another device that does the same job?",
-            weight: 2,
-            answers: [
-                { text: "No", score: 2 },
-                { text: "Yes, but this one has a unique advantage", score: 1 },
-                { text: "Yes, and they are mostly interchangeable", score: -2 }
-            ]
-        },
-
-        {
-            question: "Would you notice its absence in your everyday life?",
-            weight: 3,
-            answers: [
-                { text: "Definitely", score: 3 },
-                { text: "Probably", score: 2 },
-                { text: "I'm not sure", score: 0 },
-                { text: "Probably not", score: -2 },
-                { text: "Not at all", score: -3 }
-            ]
-        }
-    ],
-
 
     Books: [
-
-        {
-            question: "When did you last read this?",
-            weight: 1,
-            answers: [
-                { text: "Within the last week", score: 1 },
-                { text: "Within the last month", score: 1 },
-                { text: "1–6 months ago", score: 0 },
-                { text: "6–12 months ago", score: -1 },
-                { text: "More than a year ago", score: -2 },
-                { text: "I don't remember", score: -1 }
-            ]
-        },
-
-        {
-            question: "Why did you last read it?",
-            weight: 2,
-            answers: [
-                { text: "I genuinely wanted to", score: 2 },
-                { text: "For school", score: -1 },
-                { text: "For work", score: -1 },
-                { text: "Someone recommended it", score: 1 },
-                { text: "I had to", score: -2 },
-                { text: "I don't remember", score: 0 }
-            ]
-        },
-
-        {
-            question: "If nobody expected you to read this again, would you choose to?",
-            weight: 3,
-            answers: [
-                { text: "Definitely", score: 3 },
-                { text: "Probably", score: 2 },
-                { text: "I'm not sure", score: 0 },
-                { text: "Probably not", score: -2 },
-                { text: "Definitely not", score: -3 }
-            ]
-        },
-
-        {
-            question: "If this disappeared tomorrow, would you feel the need to replace it?",
-            weight: 3,
-            answers: [
-                { text: "Definitely", score: 3 },
-                { text: "Probably", score: 2 },
-                { text: "I'm not sure", score: 0 },
-                { text: "Probably not", score: -2 },
-                { text: "Definitely not", score: -3 }
-            ]
-        },
-
-        {
-            question: "Does this book have personal or sentimental value to you?",
-            weight: 2,
-            answers: [
-                { text: "A lot", score: 3 },
-                { text: "Some", score: 1 },
-                { text: "Very little", score: 0 },
-                { text: "None", score: -2 }
-            ]
-        }
+        "School / work",
+        "Entertainment",
+        "Reference",
+        "Hobby / learning",
+        "Planned reading",
+        "Sentimental",
+        "Other"
     ],
 
+    Electronics: [
+        "Daily use",
+        "Occasional use",
+        "Backup",
+        "Work / school",
+        "Hobby",
+        "Sentimental",
+        "Other"
+    ],
 
     Beauty: [
-
-        {
-            question: "When did you last use this because you wanted to?",
-            weight: 1,
-            answers: [
-                { text: "Within the last week", score: 2 },
-                { text: "Within the last month", score: 1 },
-                { text: "1–6 months ago", score: 0 },
-                { text: "More than 6 months ago", score: -2 },
-                { text: "I don't remember", score: -1 }
-            ]
-        },
-
-        {
-            question: "How do you actually feel about using this?",
-            weight: 2,
-            answers: [
-                { text: "I genuinely enjoy it", score: 2 },
-                { text: "I like it", score: 1 },
-                { text: "I'm neutral", score: 0 },
-                { text: "I don't really like it", score: -1 },
-                { text: "I actively avoid it", score: -2 }
-            ]
-        },
-
-        {
-            question: "If you didn't already own this, would you buy it today?",
-            weight: 3,
-            answers: [
-                { text: "Definitely", score: 3 },
-                { text: "Probably", score: 2 },
-                { text: "I'm not sure", score: 0 },
-                { text: "Probably not", score: -2 },
-                { text: "Definitely not", score: -3 }
-            ]
-        },
-
-        {
-            question: "Do you already have another product that does essentially the same thing?",
-            weight: 2,
-            answers: [
-                { text: "No", score: 2 },
-                { text: "Yes, one", score: -1 },
-                { text: "Yes, several", score: -2 }
-            ]
-        },
-
-        {
-            question: "Would you notice if this disappeared tomorrow?",
-            weight: 3,
-            answers: [
-                { text: "Definitely", score: 3 },
-                { text: "Probably", score: 2 },
-                { text: "I'm not sure", score: 0 },
-                { text: "Probably not", score: -2 },
-                { text: "Not at all", score: -3 }
-            ]
-        }
+        "Everyday",
+        "Occasional",
+        "Special occasion",
+        "Experimental",
+        "Backup",
+        "Other"
     ],
-
 
     Home: [
-
-        {
-            question: "How often do you intentionally use this?",
-            weight: 1,
-            answers: [
-                { text: "Every day", score: 2 },
-                { text: "Every week", score: 1 },
-                { text: "Every few months", score: 0 },
-                { text: "Almost never", score: -2 },
-                { text: "Never", score: -3 }
-            ]
-        },
-
-        {
-            question: "When did you last use it because you genuinely wanted to?",
-            weight: 2,
-            answers: [
-                { text: "Within the last week", score: 2 },
-                { text: "Within the last month", score: 1 },
-                { text: "Several months ago", score: 0 },
-                { text: "More than a year ago", score: -2 },
-                { text: "I don't remember", score: -1 }
-            ]
-        },
-
-        {
-            question: "If you didn't own this, would you notice its absence?",
-            weight: 3,
-            answers: [
-                { text: "Definitely", score: 3 },
-                { text: "Probably", score: 2 },
-                { text: "I'm not sure", score: 0 },
-                { text: "Probably not", score: -2 },
-                { text: "Not at all", score: -3 }
-            ]
-        },
-
-        {
-            question: "Does another item already do essentially the same job?",
-            weight: 2,
-            answers: [
-                { text: "No", score: 2 },
-                { text: "Yes, but this has a unique advantage", score: 1 },
-                { text: "Yes, almost completely", score: -2 }
-            ]
-        },
-
-        {
-            question: "If you saw this in a store today, would you choose to buy it?",
-            weight: 3,
-            answers: [
-                { text: "Definitely", score: 3 },
-                { text: "Probably", score: 2 },
-                { text: "I'm not sure", score: 0 },
-                { text: "Probably not", score: -2 },
-                { text: "Definitely not", score: -3 }
-            ]
-        }
+        "Daily necessity",
+        "Occasional use",
+        "Decoration",
+        "Storage / organization",
+        "Seasonal",
+        "Sentimental",
+        "Other"
     ],
 
-
     Hobby: [
-
-        {
-            question: "When did you last use this because you genuinely wanted to?",
-            weight: 1,
-            answers: [
-                { text: "Within the last week", score: 2 },
-                { text: "Within the last month", score: 1 },
-                { text: "1–6 months ago", score: 0 },
-                { text: "6–12 months ago", score: -1 },
-                { text: "More than a year ago", score: -2 },
-                { text: "I don't remember", score: -1 }
-            ]
-        },
-
-        {
-            question: "Are you still genuinely interested in this hobby?",
-            weight: 3,
-            answers: [
-                { text: "Very much", score: 3 },
-                { text: "Yes, somewhat", score: 1 },
-                { text: "I'm not sure", score: 0 },
-                { text: "Not really", score: -2 },
-                { text: "No", score: -3 }
-            ]
-        },
-
-        {
-            question: "Do you realistically expect to use this again?",
-            weight: 3,
-            answers: [
-                { text: "Definitely", score: 3 },
-                { text: "Probably", score: 2 },
-                { text: "I'm not sure", score: 0 },
-                { text: "Probably not", score: -2 },
-                { text: "Definitely not", score: -3 }
-            ]
-        },
-
-        {
-            question: "Do you own other equipment that can do essentially the same thing?",
-            weight: 2,
-            answers: [
-                { text: "No", score: 2 },
-                { text: "Yes, one alternative", score: -1 },
-                { text: "Yes, several alternatives", score: -2 }
-            ]
-        },
-
-        {
-            question: "If you didn't already own this, would you spend money on it today?",
-            weight: 3,
-            answers: [
-                { text: "Definitely", score: 3 },
-                { text: "Probably", score: 2 },
-                { text: "I'm not sure", score: 0 },
-                { text: "Probably not", score: -2 },
-                { text: "Definitely not", score: -3 }
-            ]
-        }
+        "Active hobby",
+        "Occasional hobby",
+        "Former hobby",
+        "Collection",
+        "Creative project",
+        "Other"
     ]
 };
 
 
 /* =========================================================
-   START
+   QUESTION ENGINE
+========================================================= */
+
+const questionEngine = {
+
+    /* =====================================================
+       CLOTHING
+    ===================================================== */
+
+    Clothing: {
+
+        "Everyday": [
+
+            {
+                question: "How often do you realistically wear this?",
+                weight: 2,
+                answers: [
+                    ["Almost every day", 3],
+                    ["Every week", 2],
+                    ["Every few weeks", 1],
+                    ["Rarely", -1],
+                    ["Almost never", -2]
+                ]
+            },
+
+            {
+                question: "When you have other options, would you choose this?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Usually", 2],
+                    ["Sometimes", 0],
+                    ["Rarely", -2],
+                    ["Never", -3]
+                ]
+            },
+
+            {
+                question: "How do you feel when you wear it?",
+                weight: 2,
+                answers: [
+                    ["I love wearing it", 3],
+                    ["I like wearing it", 2],
+                    ["Neutral", 0],
+                    ["I don't really like it", -2],
+                    ["I actively avoid it", -3]
+                ]
+            },
+
+            {
+                question: "Does something else already fill the same role?",
+                weight: 2,
+                answers: [
+                    ["No", 2],
+                    ["Yes, but this is different", 1],
+                    ["Yes, very similarly", -1],
+                    ["Yes, and I prefer the alternative", -2]
+                ]
+            },
+
+            {
+                question: "If you didn't own this, would you want something similar?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            }
+        ],
+
+
+        "Special occasion": [
+
+            {
+                question: "How often do you realistically have occasions where this could be useful?",
+                weight: 3,
+                answers: [
+                    ["Several times a year", 3],
+                    ["About once a year", 2],
+                    ["Every few years", 1],
+                    ["Very rarely", -1],
+                    ["Almost never", -2]
+                ]
+            },
+
+            {
+                question: "Do you realistically expect to need something like this again?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            },
+
+            {
+                question: "If that occasion happened, would you choose this?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            },
+
+            {
+                question: "Do you have a realistic alternative for the same occasion?",
+                weight: 2,
+                answers: [
+                    ["No", 2],
+                    ["Yes, but I prefer this", 1],
+                    ["Yes, equally good", -1],
+                    ["Yes, and I prefer the alternative", -2]
+                ]
+            },
+
+            {
+                question: "Would you regret not having this when you eventually needed it?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["Maybe", 0],
+                    ["Probably not", -2],
+                    ["Not at all", -3]
+                ]
+            }
+        ],
+
+
+        "Work / school": [
+
+            {
+                question: "Does this still fit your current work or school life?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Mostly", 2],
+                    ["I'm not sure", 0],
+                    ["Not really", -2],
+                    ["No", -3]
+                ]
+            },
+
+            {
+                question: "How often do you realistically need clothing like this?",
+                weight: 2,
+                answers: [
+                    ["Very often", 3],
+                    ["Regularly", 2],
+                    ["Sometimes", 1],
+                    ["Rarely", -1],
+                    ["Almost never", -2]
+                ]
+            },
+
+            {
+                question: "Would you choose this over your alternatives?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["Sometimes", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            },
+
+            {
+                question: "Would you replace this if it disappeared?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["No", -3]
+                ]
+            }
+        ],
+
+
+        "Sports": [
+
+            {
+                question: "Are you still actively involved in the activity this is for?",
+                weight: 3,
+                answers: [
+                    ["Yes, regularly", 3],
+                    ["Yes, occasionally", 2],
+                    ["I'm not sure", 0],
+                    ["Not really", -2],
+                    ["No", -3]
+                ]
+            },
+
+            {
+                question: "How often do you realistically use this?",
+                weight: 2,
+                answers: [
+                    ["Every week", 3],
+                    ["Every month", 2],
+                    ["Every few months", 1],
+                    ["Rarely", -1],
+                    ["Never", -2]
+                ]
+            },
+
+            {
+                question: "Would you choose this over your alternatives?",
+                weight: 2,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["Sometimes", 0],
+                    ["Probably not", -2],
+                    ["Never", -3]
+                ]
+            },
+
+            {
+                question: "Would you need to replace this if you wanted to continue the activity?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["Maybe", 0],
+                    ["Probably not", -2],
+                    ["No", -3]
+                ]
+            }
+        ],
+
+
+        "Seasonal": [
+
+            {
+                question: "Is this still appropriate for the seasons or conditions you expect to use it in?",
+                weight: 2,
+                answers: [
+                    ["Definitely", 3],
+                    ["Mostly", 2],
+                    ["I'm not sure", 0],
+                    ["Not really", -2],
+                    ["No", -3]
+                ]
+            },
+
+            {
+                question: "How often does the season or situation actually occur for you?",
+                weight: 2,
+                answers: [
+                    ["Very often", 3],
+                    ["Regularly", 2],
+                    ["Sometimes", 1],
+                    ["Rarely", -1],
+                    ["Almost never", -2]
+                ]
+            },
+
+            {
+                question: "Would you want this available when that season arrives?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            },
+
+            {
+                question: "Do you already have a better alternative?",
+                weight: 2,
+                answers: [
+                    ["No", 2],
+                    ["Yes, but I prefer this", 1],
+                    ["Yes, equally good", -1],
+                    ["Yes, better", -2]
+                ]
+            }
+        ],
+
+
+        "Sentimental": [
+
+            {
+                question: "How emotionally connected are you to this item?",
+                weight: 4,
+                answers: [
+                    ["Very connected", 3],
+                    ["Quite connected", 2],
+                    ["A little", 1],
+                    ["Not much", -1],
+                    ["Not at all", -3]
+                ]
+            },
+
+            {
+                question: "Would you be genuinely upset if this disappeared?",
+                weight: 4,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["Maybe", 0],
+                    ["Probably not", -2],
+                    ["Not at all", -3]
+                ]
+            },
+
+            {
+                question: "Does this remind you of a person, place or period of your life?",
+                weight: 3,
+                answers: [
+                    ["Very strongly", 3],
+                    ["Somewhat", 2],
+                    ["A little", 1],
+                    ["Not really", 0],
+                    ["No", -2]
+                ]
+            },
+
+            {
+                question: "Would you choose to keep the memory even without the physical item?",
+                weight: 2,
+                answers: [
+                    ["Yes, but I still want the item", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -1],
+                    ["No, the physical item is what matters", 2]
+                ]
+            }
+        ],
+
+
+        "Other": [
+
+            {
+                question: "Does this still serve a meaningful purpose in your life?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Not at all", -3]
+                ]
+            },
+
+            {
+                question: "If you didn't already own this, would you choose to have something like it?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            },
+
+            {
+                question: "Would you notice if this disappeared tomorrow?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Not at all", -3]
+                ]
+            }
+        ]
+    },
+
+
+    /* =====================================================
+       BOOKS
+    ===================================================== */
+
+    Books: {
+
+        "School / work": [
+
+            {
+                question: "Do you still realistically need this for school or work?",
+                weight: 4,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["No", -3]
+                ]
+            },
+
+            {
+                question: "If you needed the information again, would you use this book?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["Maybe", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            },
+
+            {
+                question: "Would you choose to read this again if nobody required you to?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            },
+
+            {
+                question: "Could you easily access the same information somewhere else?",
+                weight: 2,
+                answers: [
+                    ["No", 2],
+                    ["Maybe", 0],
+                    ["Yes", -2]
+                ]
+            },
+
+            {
+                question: "Would you notice if this disappeared?",
+                weight: 2,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Not at all", -3]
+                ]
+            }
+        ],
+
+
+        "Entertainment": [
+
+            {
+                question: "Do you genuinely enjoy reading this?",
+                weight: 3,
+                answers: [
+                    ["A lot", 3],
+                    ["Yes", 2],
+                    ["Sometimes", 0],
+                    ["Not really", -2],
+                    ["No", -3]
+                ]
+            },
+
+            {
+                question: "Would you choose to read it again?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["Maybe", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            },
+
+            {
+                question: "If it disappeared, would you want to replace it?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["No", -3]
+                ]
+            },
+
+            {
+                question: "Do you prefer having a physical copy?",
+                weight: 2,
+                answers: [
+                    ["Definitely", 3],
+                    ["Yes", 2],
+                    ["I don't care", 0],
+                    ["Probably not", -1],
+                    ["No", -2]
+                ]
+            }
+        ],
+
+
+        "Reference": [
+
+            {
+                question: "Do you still expect to need the information in this?",
+                weight: 4,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["No", -3]
+                ]
+            },
+
+            {
+                question: "Would you actually use this as a reference instead of looking elsewhere?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["Maybe", 0],
+                    ["Probably not", -2],
+                    ["No", -3]
+                ]
+            },
+
+            {
+                question: "Is the information still current and useful?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Mostly", 2],
+                    ["I'm not sure", 0],
+                    ["Not really", -2],
+                    ["No", -3]
+                ]
+            },
+
+            {
+                question: "Would you notice if this disappeared?",
+                weight: 2,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Not at all", -3]
+                ]
+            }
+        ],
+
+
+        "Hobby / learning": [
+
+            {
+                question: "Are you still genuinely interested in this subject?",
+                weight: 4,
+                answers: [
+                    ["Very much", 3],
+                    ["Yes", 2],
+                    ["Somewhat", 1],
+                    ["Not really", -2],
+                    ["No", -3]
+                ]
+            },
+
+            {
+                question: "Do you realistically expect to return to this book?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            },
+
+            {
+                question: "If you didn't own it, would you want to get it now?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            },
+
+            {
+                question: "Would you regret not having access to it?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["Maybe", 0],
+                    ["Probably not", -2],
+                    ["Not at all", -3]
+                ]
+            }
+        ],
+
+
+        "Planned reading": [
+
+            {
+                question: "Do you genuinely still want to read this?",
+                weight: 4,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["No", -3]
+                ]
+            },
+
+            {
+                question: "When do you realistically expect to read it?",
+                weight: 3,
+                answers: [
+                    ["Very soon", 3],
+                    ["Within a few months", 2],
+                    ["Sometime this year", 1],
+                    ["I have no real plan", -1],
+                    ["Probably never", -3]
+                ]
+            },
+
+            {
+                question: "If you didn't already own it, would you still want to read it?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            },
+
+            {
+                question: "Would you regret losing the opportunity to read this?",
+                weight: 2,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["Maybe", 0],
+                    ["Probably not", -2],
+                    ["Not at all", -3]
+                ]
+            }
+        ],
+
+
+        "Sentimental": [
+
+            {
+                question: "How emotionally connected are you to this book?",
+                weight: 4,
+                answers: [
+                    ["Very connected", 3],
+                    ["Quite connected", 2],
+                    ["A little", 1],
+                    ["Not much", -1],
+                    ["Not at all", -3]
+                ]
+            },
+
+            {
+                question: "Would you be genuinely upset if it disappeared?",
+                weight: 4,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["Maybe", 0],
+                    ["Probably not", -2],
+                    ["Not at all", -3]
+                ]
+            },
+
+            {
+                question: "Does it represent an important person, memory or period of your life?",
+                weight: 3,
+                answers: [
+                    ["Very strongly", 3],
+                    ["Yes", 2],
+                    ["A little", 1],
+                    ["Not really", 0],
+                    ["No", -2]
+                ]
+            }
+        ],
+
+
+        "Other": [
+
+            {
+                question: "Does this book still have a meaningful role in your life?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["No", -3]
+                ]
+            },
+
+            {
+                question: "If it disappeared tomorrow, would you want to replace it?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            },
+
+            {
+                question: "Would you choose to own it again today?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            }
+        ]
+    }
+
+};
+
+
+/* =========================================================
+   START APP
 ========================================================= */
 
 function startApp() {
@@ -405,17 +828,12 @@ function startApp() {
     document.getElementById("landing").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
 
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-
     showStep(1);
 }
 
 
 /* =========================================================
-   IMAGE UPLOAD
+   IMAGE
 ========================================================= */
 
 function previewImage(event) {
@@ -426,21 +844,66 @@ function previewImage(event) {
 
     uploadedImage = file;
 
-    const preview = document.getElementById("imagePreview");
-    const content = document.getElementById("uploadContent");
+    const preview =
+        document.getElementById("imagePreview");
 
-    preview.src = URL.createObjectURL(file);
+    const content =
+        document.getElementById("uploadContent");
 
-    preview.classList.remove("hidden");
-    content.classList.add("hidden");
+    if (preview) {
+        preview.src = URL.createObjectURL(file);
+        preview.classList.remove("hidden");
+    }
 
-    document.getElementById("imageContinue").disabled = false;
+    if (content) {
+        content.classList.add("hidden");
+    }
+
+    const button =
+        document.getElementById("imageContinue");
+
+    if (button) {
+        button.disabled = false;
+    }
 }
 
 
 /* =========================================================
-   STEP NAVIGATION
+   STEPS
 ========================================================= */
+
+function showStep(step) {
+
+    document
+        .querySelectorAll(".app-step")
+        .forEach(section =>
+            section.classList.add("hidden")
+        );
+
+    const target =
+        document.getElementById(`step${step}`);
+
+    if (target) {
+        target.classList.remove("hidden");
+    }
+
+    const progress =
+        document.getElementById("progress");
+
+    if (progress) {
+        progress.style.width =
+            `${step * 25}%`;
+    }
+
+    const label =
+        document.getElementById("step-label");
+
+    if (label) {
+        label.textContent =
+            `Step ${step} of 4`;
+    }
+}
+
 
 function nextStep(step) {
 
@@ -453,32 +916,6 @@ function nextStep(step) {
 }
 
 
-function showStep(step) {
-
-    document.querySelectorAll(".app-step").forEach(section => {
-        section.classList.add("hidden");
-    });
-
-    const target = document.getElementById(`step${step}`);
-
-    if (target) {
-        target.classList.remove("hidden");
-    }
-
-    const progress = document.getElementById("progress");
-
-    if (progress) {
-        progress.style.width = `${step * 25}%`;
-    }
-
-    const label = document.getElementById("step-label");
-
-    if (label) {
-        label.textContent = `Step ${step} of 4`;
-    }
-}
-
-
 /* =========================================================
    CATEGORY
 ========================================================= */
@@ -487,18 +924,95 @@ function selectCategory(button, category) {
 
     document
         .querySelectorAll(".category-grid button")
-        .forEach(btn => btn.classList.remove("selected"));
+        .forEach(btn =>
+            btn.classList.remove("selected")
+        );
 
     button.classList.add("selected");
 
     selectedCategory = category;
 
-    document.getElementById("categoryContinue").disabled = false;
+    const continueButton =
+        document.getElementById("categoryContinue");
+
+    if (continueButton) {
+        continueButton.disabled = false;
+    }
 }
 
 
 /* =========================================================
-   QUESTIONS
+   ROLE SCREEN
+========================================================= */
+
+function generateRoles() {
+
+    const container =
+        document.getElementById("roles");
+
+    if (!container) {
+        console.error(
+            "Missing #roles element in HTML."
+        );
+        return;
+    }
+
+    container.innerHTML = "";
+
+    const roles =
+        rolesByCategory[selectedCategory];
+
+    if (!roles) {
+        console.error(
+            "No roles found for:",
+            selectedCategory
+        );
+        return;
+    }
+
+    roles.forEach(role => {
+
+        const button =
+            document.createElement("button");
+
+        button.textContent = role;
+
+        button.className =
+            "role-button";
+
+        button.onclick = () =>
+            selectRole(button, role);
+
+        container.appendChild(button);
+    });
+
+    showStep(3);
+}
+
+
+function selectRole(button, role) {
+
+    document
+        .querySelectorAll(".role-button")
+        .forEach(btn =>
+            btn.classList.remove("selected")
+        );
+
+    button.classList.add("selected");
+
+    selectedRole = role;
+
+    const continueButton =
+        document.getElementById("roleContinue");
+
+    if (continueButton) {
+        continueButton.disabled = false;
+    }
+}
+
+
+/* =========================================================
+   GENERATE CONTEXT QUESTIONS
 ========================================================= */
 
 function generateQuestions() {
@@ -506,53 +1020,133 @@ function generateQuestions() {
     const container =
         document.getElementById("questions");
 
-    container.innerHTML = "";
-
-    const questions =
-        questionsByCategory[selectedCategory];
-
-    if (!questions) {
-        console.error("No questions found for:", selectedCategory);
+    if (!container) {
+        console.error(
+            "Missing #questions element."
+        );
         return;
     }
 
-    questions.forEach((question, index) => {
+    container.innerHTML = "";
 
-        const wrapper =
-            document.createElement("div");
+    currentQuestions =
+        questionEngine[selectedCategory]?.[selectedRole];
 
-        wrapper.className = "question";
 
-        let options = `
-            <option value="">
-                Choose an answer
-            </option>
-        `;
+    /*
+       Fallback if this category/role does not yet
+       have a specialized question set.
+    */
 
-        question.answers.forEach((answer, answerIndex) => {
+    if (!currentQuestions) {
 
-            options += `
-                <option value="${answerIndex}">
-                    ${answer.text}
-                </option>
-            `;
-        });
+        currentQuestions = [
 
-        wrapper.innerHTML = `
-            <label>${question.question}</label>
+            {
+                question:
+                    "Does this item still have a meaningful role in your life?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["No", -3]
+                ]
+            },
 
-            <select
-                class="answer"
-                data-question="${index}"
-            >
-                ${options}
-            </select>
-        `;
+            {
+                question:
+                    "If this disappeared tomorrow, would you want to replace it?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            },
 
-        container.appendChild(wrapper);
-    });
+            {
+                question:
+                    "Would you choose to own this again today?",
+                weight: 3,
+                answers: [
+                    ["Definitely", 3],
+                    ["Probably", 2],
+                    ["I'm not sure", 0],
+                    ["Probably not", -2],
+                    ["Definitely not", -3]
+                ]
+            }
+        ];
+    }
 
-    nextStep(3);
+
+    currentQuestions.forEach(
+        (question, index) => {
+
+            const wrapper =
+                document.createElement("div");
+
+            wrapper.className =
+                "question";
+
+            const label =
+                document.createElement("label");
+
+            label.textContent =
+                question.question;
+
+            const select =
+                document.createElement("select");
+
+            select.className =
+                "answer";
+
+            select.dataset.question =
+                index;
+
+            const placeholder =
+                document.createElement("option");
+
+            placeholder.value = "";
+
+            placeholder.textContent =
+                "Choose an answer";
+
+            select.appendChild(
+                placeholder
+            );
+
+
+            question.answers.forEach(
+                (answer, answerIndex) => {
+
+                    const option =
+                        document.createElement("option");
+
+                    option.value =
+                        answerIndex;
+
+                    option.textContent =
+                        answer[0];
+
+                    select.appendChild(
+                        option
+                    );
+                }
+            );
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(select);
+
+            container.appendChild(wrapper);
+        }
+    );
+
+    showStep(4);
 }
 
 
@@ -565,43 +1159,56 @@ function analyzeItem() {
     const selects =
         document.querySelectorAll(".answer");
 
-    const questions =
-        questionsByCategory[selectedCategory];
+    if (
+        !currentQuestions ||
+        currentQuestions.length === 0
+    ) {
+        return;
+    }
 
     let weightedScore = 0;
-    let totalWeight = 0;
+    let maximumScore = 0;
 
-    let answeredQuestions = 0;
+    let answered = 0;
 
-    questions.forEach((question, index) => {
 
-        const select = selects[index];
+    currentQuestions.forEach(
+        (question, index) => {
 
-        if (!select || select.value === "") {
-            return;
+            const select =
+                selects[index];
+
+            if (
+                !select ||
+                select.value === ""
+            ) {
+                return;
+            }
+
+            const answerIndex =
+                Number(select.value);
+
+            const answer =
+                question.answers[answerIndex];
+
+            const score =
+                answer[1];
+
+            weightedScore +=
+                score * question.weight;
+
+            maximumScore +=
+                3 * question.weight;
+
+            answered++;
         }
-
-        const answerIndex =
-            Number(select.value);
-
-        const answer =
-            question.answers[answerIndex];
-
-        weightedScore +=
-            answer.score * question.weight;
-
-        totalWeight +=
-            3 * question.weight;
-
-        answeredQuestions++;
-    });
+    );
 
 
-    /* -----------------------------------------
-       Require every question
-    ----------------------------------------- */
-
-    if (answeredQuestions < questions.length) {
+    if (
+        answered <
+        currentQuestions.length
+    ) {
 
         alert(
             "Please answer every question before continuing."
@@ -611,191 +1218,189 @@ function analyzeItem() {
     }
 
 
-    /* -----------------------------------------
-       Normalize score to -3 → +3
-    ----------------------------------------- */
-
     const normalizedScore =
         weightedScore /
-        (totalWeight / 3);
+        maximumScore;
 
 
-    /* -----------------------------------------
-       CLASSIFY
-    ----------------------------------------- */
+    /*
+       Convert -1 → +1
+    */
+
 
     let result;
-    let resultClass;
     let reasoning;
     let reflection;
+    let confidence;
 
 
-    if (normalizedScore >= 1.7) {
+    /* =========================================
+       CLEAR KEEP
+    ========================================= */
 
-        result = "CLEAR KEEP";
-        resultClass = "keep";
+    if (normalizedScore >= 0.55) {
+
+        result =
+            "CLEAR KEEP";
 
         reasoning =
             "Your answers consistently suggest that this item " +
-            "still adds meaningful value to your life. You use it " +
-            "intentionally, value what it provides, or would notice " +
-            "its absence.";
+            "still has a meaningful role in your life. " +
+            "Keeping it appears supported by the way you use it, " +
+            "value it, or expect to need it.";
 
         reflection =
-            "What specifically makes this item worth keeping? " +
-            "That may be the reason you should continue making space for it.";
+            "What specifically makes this item worth keeping?";
 
+
+        confidence =
+            normalizedScore >= 0.75
+                ? "High"
+                : "Moderate";
     }
 
-    else if (normalizedScore >= 0.7) {
 
-        result = "KEEP — BUT THINK";
-        resultClass = "consider";
+    /* =========================================
+       KEEP BUT THINK
+    ========================================= */
+
+    else if (normalizedScore >= 0.20) {
+
+        result =
+            "KEEP — BUT THINK";
 
         reasoning =
             "There are meaningful reasons to keep this item, " +
-            "but some of your answers suggest that its role in " +
-            "your life may have changed.";
+            "but some of your answers suggest that its role " +
+            "may have changed.";
 
         reflection =
             "Are you keeping this because it still serves you, " +
             "or because it once did?";
 
+        confidence =
+            "Moderate";
     }
 
-    else if (normalizedScore > -0.7) {
 
-        result = "UNCERTAIN";
-        resultClass = "uncertain";
+    /* =========================================
+       UNCERTAIN
+    ========================================= */
+
+    else if (normalizedScore > -0.20) {
+
+        result =
+            "UNCERTAIN";
 
         reasoning =
             "Your answers point in different directions. " +
-            "There are reasons to keep this item, but also reasons " +
-            "to question whether it still belongs in your life.";
+            "There are valid reasons both to keep this item " +
+            "and to question whether it still belongs in your life.";
 
         reflection =
-            "You don't need to make a decision today. " +
-            "Try asking yourself what you would actually miss about it.";
+            "What would you actually miss if this disappeared?";
 
+        confidence =
+            "Low";
     }
 
-    else if (normalizedScore > -1.7) {
 
-        result = "LEANING TOWARD LETTING GO";
-        resultClass = "let-go";
+    /* =========================================
+       LEANING LET GO
+    ========================================= */
+
+    else if (normalizedScore > -0.55) {
+
+        result =
+            "LEANING TOWARD LETTING GO";
 
         reasoning =
-            "Most of your answers suggest that this item may no " +
-            "longer provide enough value to justify keeping it, " +
-            "although there are still some reasons to hold onto it.";
+            "Most of your answers suggest that this item " +
+            "may no longer play an important role in your life, " +
+            "although there are still some reasons to keep it.";
 
         reflection =
-            "Are you keeping it for what it currently gives you, " +
+            "Are you keeping this for what it currently gives you, " +
             "or for a possible future use?";
 
+        confidence =
+            "Moderate";
     }
+
+
+    /* =========================================
+       CLEAR LET GO
+    ========================================= */
 
     else {
 
-        result = "CLEAR LET GO";
-        resultClass = "strong-let-go";
+        result =
+            "CLEAR LET GO";
 
         reasoning =
             "Your answers consistently point away from keeping this item. " +
-            "You don't seem to use it intentionally, value it strongly, " +
-            "or expect it to play an important role in your future.";
+            "You don't appear to expect it to play an important role " +
+            "in your current or future life.";
 
         reflection =
             "If this disappeared tomorrow, what would you actually lose?";
 
+        confidence =
+            "High";
     }
 
 
-    /* -----------------------------------------
-       CONFIDENCE
-    ----------------------------------------- */
-
-    const distance =
-        Math.abs(normalizedScore);
-
-    let confidence;
-
-    if (distance >= 2) {
-        confidence = "High";
-    }
-
-    else if (distance >= 1) {
-        confidence = "Moderate";
-    }
-
-    else {
-        confidence = "Low";
-    }
-
-
-    /* -----------------------------------------
-       UPDATE RESULT UI
-    ----------------------------------------- */
+    /* =====================================================
+       RESULT UI
+    ===================================================== */
 
     const recommendation =
-        document.getElementById("recommendation");
+        document.getElementById(
+            "recommendation"
+        );
 
     if (recommendation) {
-        recommendation.textContent = result;
+        recommendation.textContent =
+            result;
     }
 
+
     const confidenceElement =
-        document.getElementById("confidence");
+        document.getElementById(
+            "confidence"
+        );
 
     if (confidenceElement) {
+
         confidenceElement.textContent =
             `${confidence} confidence`;
     }
 
+
     const reasoningElement =
-        document.getElementById("reasoningText");
+        document.getElementById(
+            "reasoningText"
+        );
 
     if (reasoningElement) {
+
         reasoningElement.textContent =
             reasoning;
     }
 
-    const icon =
-        document.getElementById("resultIcon");
-
-    if (icon) {
-
-        if (resultClass === "keep") {
-            icon.textContent = "✓";
-        }
-
-        else if (resultClass === "consider") {
-            icon.textContent = "○";
-        }
-
-        else if (resultClass === "uncertain") {
-            icon.textContent = "?";
-        }
-
-        else {
-            icon.textContent = "↘";
-        }
-    }
-
-
-    /* -----------------------------------------
-       Add reflection if HTML supports it
-    ----------------------------------------- */
 
     let reflectionElement =
-        document.getElementById("reflectionText");
+        document.getElementById(
+            "reflectionText"
+        );
+
 
     if (!reflectionElement) {
 
-        const reasoningContainer =
-            document.getElementById("reasoningText");
+        const parent =
+            reasoningElement?.parentNode;
 
-        if (reasoningContainer) {
+        if (parent) {
 
             reflectionElement =
                 document.createElement("p");
@@ -806,76 +1411,76 @@ function analyzeItem() {
             reflectionElement.className =
                 "reflection-text";
 
-            reasoningContainer.parentNode.appendChild(
+            parent.appendChild(
                 reflectionElement
             );
         }
     }
 
+
     if (reflectionElement) {
+
         reflectionElement.textContent =
             reflection;
     }
 
 
-    showStep(4);
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
+    showStep(5);
 }
 
 
 /* =========================================================
-   NEW ITEM
+   RESET
 ========================================================= */
 
 function newItem() {
 
-    uploadedImage = null;
     selectedCategory = "";
+    selectedRole = "";
+    uploadedImage = null;
+    currentQuestions = [];
 
-    const imageInput =
-        document.getElementById("imageInput");
 
-    if (imageInput) {
-        imageInput.value = "";
+    const input =
+        document.getElementById(
+            "imageInput"
+        );
+
+    if (input) {
+        input.value = "";
     }
 
+
     const preview =
-        document.getElementById("imagePreview");
+        document.getElementById(
+            "imagePreview"
+        );
 
     if (preview) {
         preview.classList.add("hidden");
     }
 
-    const uploadContent =
-        document.getElementById("uploadContent");
 
-    if (uploadContent) {
-        uploadContent.classList.remove("hidden");
-    }
-
-    const imageContinue =
-        document.getElementById("imageContinue");
-
-    if (imageContinue) {
-        imageContinue.disabled = true;
-    }
-
-    document
-        .querySelectorAll(".category-grid button")
-        .forEach(btn =>
-            btn.classList.remove("selected")
+    const content =
+        document.getElementById(
+            "uploadContent"
         );
 
-    const categoryContinue =
-        document.getElementById("categoryContinue");
-
-    if (categoryContinue) {
-        categoryContinue.disabled = true;
+    if (content) {
+        content.classList.remove("hidden");
     }
+
+
+    document
+        .querySelectorAll(
+            ".category-grid button"
+        )
+        .forEach(btn =>
+            btn.classList.remove(
+                "selected"
+            )
+        );
+
 
     showStep(1);
 
@@ -893,6 +1498,6 @@ function newItem() {
 function saveItem() {
 
     alert(
-        "Saved! A personal item history will be available in a future version."
+        "Saving items will be available in a future version."
     );
 }
