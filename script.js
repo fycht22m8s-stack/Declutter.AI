@@ -1154,61 +1154,37 @@ function generateQuestions() {
    DECISION ENGINE
 ========================================================= */
 
-function analyzeItem() {
+async function analyzeItem() {
 
-    const selects =
-        document.querySelectorAll(".answer");
+    const selects = document.querySelectorAll(".answer");
 
-    if (
-        !currentQuestions ||
-        currentQuestions.length === 0
-    ) {
+    if (!currentQuestions || currentQuestions.length === 0) {
         return;
     }
 
-    let weightedScore = 0;
-    let maximumScore = 0;
-
+    const answers = [];
     let answered = 0;
 
+    currentQuestions.forEach((question, index) => {
 
-    currentQuestions.forEach(
-        (question, index) => {
+        const select = selects[index];
 
-            const select =
-                selects[index];
-
-            if (
-                !select ||
-                select.value === ""
-            ) {
-                return;
-            }
-
-            const answerIndex =
-                Number(select.value);
-
-            const answer =
-                question.answers[answerIndex];
-
-            const score =
-                answer[1];
-
-            weightedScore +=
-                score * question.weight;
-
-            maximumScore +=
-                3 * question.weight;
-
-            answered++;
+        if (!select || select.value === "") {
+            return;
         }
-    );
 
+        const answerIndex = Number(select.value);
+        const answer = question.answers[answerIndex];
 
-    if (
-        answered <
-        currentQuestions.length
-    ) {
+        answers.push({
+            question: question.question,
+            answer: answer[0]
+        });
+
+        answered++;
+    });
+
+    if (answered < currentQuestions.length) {
 
         alert(
             "Please answer every question before continuing."
@@ -1218,214 +1194,277 @@ function analyzeItem() {
     }
 
 
-    const normalizedScore =
-        weightedScore /
-        maximumScore;
-
-
-    /*
-       Convert -1 → +1
-    */
-
-
-    let result;
-    let reasoning;
-    let reflection;
-    let confidence;
-
-
     /* =========================================
-       CLEAR KEEP
+       LOADING STATE
     ========================================= */
 
-    if (normalizedScore >= 0.55) {
-
-        result =
-            "CLEAR KEEP";
-
-        reasoning =
-            "Your answers consistently suggest that this item " +
-            "still has a meaningful role in your life. " +
-            "Keeping it appears supported by the way you use it, " +
-            "value it, or expect to need it.";
-
-        reflection =
-            "What specifically makes this item worth keeping?";
-
-
-        confidence =
-            normalizedScore >= 0.75
-                ? "High"
-                : "Moderate";
-    }
-
-
-    /* =========================================
-       KEEP BUT THINK
-    ========================================= */
-
-    else if (normalizedScore >= 0.20) {
-
-        result =
-            "KEEP — BUT THINK";
-
-        reasoning =
-            "There are meaningful reasons to keep this item, " +
-            "but some of your answers suggest that its role " +
-            "may have changed.";
-
-        reflection =
-            "Are you keeping this because it still serves you, " +
-            "or because it once did?";
-
-        confidence =
-            "Moderate";
-    }
-
-
-    /* =========================================
-       UNCERTAIN
-    ========================================= */
-
-    else if (normalizedScore > -0.20) {
-
-        result =
-            "UNCERTAIN";
-
-        reasoning =
-            "Your answers point in different directions. " +
-            "There are valid reasons both to keep this item " +
-            "and to question whether it still belongs in your life.";
-
-        reflection =
-            "What would you actually miss if this disappeared?";
-
-        confidence =
-            "Low";
-    }
-
-
-    /* =========================================
-       LEANING LET GO
-    ========================================= */
-
-    else if (normalizedScore > -0.55) {
-
-        result =
-            "LEANING TOWARD LETTING GO";
-
-        reasoning =
-            "Most of your answers suggest that this item " +
-            "may no longer play an important role in your life, " +
-            "although there are still some reasons to keep it.";
-
-        reflection =
-            "Are you keeping this for what it currently gives you, " +
-            "or for a possible future use?";
-
-        confidence =
-            "Moderate";
-    }
-
-
-    /* =========================================
-       CLEAR LET GO
-    ========================================= */
-
-    else {
-
-        result =
-            "CLEAR LET GO";
-
-        reasoning =
-            "Your answers consistently point away from keeping this item. " +
-            "You don't appear to expect it to play an important role " +
-            "in your current or future life.";
-
-        reflection =
-            "If this disappeared tomorrow, what would you actually lose?";
-
-        confidence =
-            "High";
-    }
-
-
-    /* =====================================================
-       RESULT UI
-    ===================================================== */
-
-    const recommendation =
-        document.getElementById(
-            "recommendation"
+    const button =
+        document.querySelector(
+            "#step3 .primary-button"
         );
 
-    if (recommendation) {
-        recommendation.textContent =
-            result;
+    if (button) {
+        button.disabled = true;
+        button.textContent = "Thinking... ✦";
     }
 
 
-    const confidenceElement =
-        document.getElementById(
-            "confidence"
-        );
+    /* =========================================
+       BUILD AI PROMPT
+    ========================================= */
 
-    if (confidenceElement) {
+    const prompt = `
+You are analyzing an item for Declutter.AI.
 
-        confidenceElement.textContent =
-            `${confidence} confidence`;
-    }
+Your job is NOT simply to tell the user to get rid of things.
+
+Declutter.AI helps people gain perspective about their possessions.
+
+The user should feel that the recommendation is based on THEIR answers.
+
+Consider:
+- current usefulness
+- actual frequency of use
+- emotional value
+- future usefulness
+- alternatives
+- whether the item would be missed
+- whether the user would choose to own it again
+- contradictions between answers
+
+Category:
+${selectedCategory}
+
+Role:
+${selectedRole}
+
+Answers:
+
+${answers
+    .map(
+        (item, index) =>
+            `${index + 1}. ${item.question}
+Answer: ${item.answer}`
+    )
+    .join("\n\n")}
+
+Give a thoughtful recommendation.
+
+Possible recommendations:
+
+CLEAR KEEP
+KEEP — BUT THINK
+UNCERTAIN
+LEANING TOWARD LETTING GO
+CLEAR LET GO
+
+Do NOT automatically recommend getting rid of something.
+
+If the answers are contradictory, acknowledge that.
+
+Return ONLY valid JSON in this exact format:
+
+{
+  "result": "CLEAR KEEP",
+  "confidence": "High",
+  "reasoning": "2-4 sentences explaining the decision using the user's answers.",
+  "reflection": "One thoughtful question that helps the user reflect."
+}
+`;
 
 
-    const reasoningElement =
-        document.getElementById(
-            "reasoningText"
-        );
+    /* =========================================
+       CALL CLOUDFLARE WORKER
+    ========================================= */
 
-    if (reasoningElement) {
+    try {
 
-        reasoningElement.textContent =
-            reasoning;
-    }
+        const response = await fetch(
+            "https://declutter-ai-api.plewko-olga.workers.dev/",
+            {
+                method: "POST",
 
+                headers: {
+                    "Content-Type": "application/json"
+                },
 
-    let reflectionElement =
-        document.getElementById(
-            "reflectionText"
+                body: JSON.stringify({
+                    message: prompt
+                })
+            }
         );
 
 
-    if (!reflectionElement) {
+        if (!response.ok) {
 
-        const parent =
-            reasoningElement?.parentNode;
+            throw new Error(
+                `AI request failed: ${response.status}`
+            );
 
-        if (parent) {
+        }
 
-            reflectionElement =
-                document.createElement("p");
 
-            reflectionElement.id =
-                "reflectionText";
+        const data = await response.json();
 
-            reflectionElement.className =
-                "reflection-text";
 
-            parent.appendChild(
-                reflectionElement
+        /* =========================================
+           GET AI TEXT
+        ========================================= */
+
+        const aiText =
+            data?.choices?.[0]?.message?.content;
+
+
+        if (!aiText) {
+            throw new Error(
+                "AI returned no response."
             );
         }
+
+
+        /* =========================================
+           PARSE JSON
+        ========================================= */
+
+        let result;
+
+        try {
+
+            result =
+                JSON.parse(aiText);
+
+        } catch {
+
+            /*
+               Some models may wrap JSON
+               inside ```json ... ```
+            */
+
+            const cleaned =
+                aiText
+                    .replace(/```json/gi, "")
+                    .replace(/```/g, "")
+                    .trim();
+
+            result =
+                JSON.parse(cleaned);
+        }
+
+
+        /* =========================================
+           RESULT UI
+        ========================================= */
+
+        const recommendation =
+            document.getElementById(
+                "recommendation"
+            );
+
+        if (recommendation) {
+
+            recommendation.textContent =
+                result.result || "UNCERTAIN";
+
+        }
+
+
+        const confidenceElement =
+            document.getElementById(
+                "confidence"
+            );
+
+        if (confidenceElement) {
+
+            confidenceElement.textContent =
+                `${result.confidence || "Moderate"} confidence`;
+
+        }
+
+
+        const reasoningElement =
+            document.getElementById(
+                "reasoningText"
+            );
+
+        if (reasoningElement) {
+
+            reasoningElement.textContent =
+                result.reasoning ||
+                "Your answers suggest there are several things worth considering.";
+
+        }
+
+
+        let reflectionElement =
+            document.getElementById(
+                "reflectionText"
+            );
+
+
+        if (!reflectionElement) {
+
+            const parent =
+                reasoningElement?.parentNode;
+
+            if (parent) {
+
+                reflectionElement =
+                    document.createElement("p");
+
+                reflectionElement.id =
+                    "reflectionText";
+
+                reflectionElement.className =
+                    "reflection-text";
+
+                parent.appendChild(
+                    reflectionElement
+                );
+
+            }
+
+        }
+
+
+        if (reflectionElement) {
+
+            reflectionElement.textContent =
+                result.reflection ||
+                "What would you actually miss if this disappeared?";
+        }
+
+
+        /* =========================================
+           SHOW RESULT
+        ========================================= */
+
+        showStep(4);
+
+
+    } catch (error) {
+
+        console.error(
+            "Declutter AI error:",
+            error
+        );
+
+        alert(
+            "Something went wrong while analyzing your item. Please try again."
+        );
+
+    } finally {
+
+        if (button) {
+
+            button.disabled = false;
+
+            button.textContent =
+                "Analyze my item →";
+
+        }
+
     }
 
-
-    if (reflectionElement) {
-
-        reflectionElement.textContent =
-            reflection;
-    }
-
-
-    showStep(5);
 }
 
 
