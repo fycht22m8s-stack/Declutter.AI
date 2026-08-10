@@ -1445,7 +1445,8 @@ Return ONLY valid JSON in this exact format:
 
         console.error(
             "Declutter AI error:",
-            error
+            error.message,
+    error
         );
 
         alert(
