@@ -2,36 +2,51 @@ let selectedCategory = "";
 let uploadedImage = null;
 
 
-/* =========================
+/* =========================================================
+   DECLUTTER.AI — DECISION FRAMEWORK v0.4
+   The goal is NOT to tell people what to throw away.
+   The goal is to help them understand whether an item
+   still belongs in their life.
+========================================================= */
+
+
+/* =========================================================
    QUESTIONS
-========================= */
+========================================================= */
 
 const questionsByCategory = {
 
     Clothing: [
+
         {
             question: "When did you last wear this?",
+            weight: 1,
             answers: [
-                { text: "Within the last week", score: 3 },
-                { text: "Within the last month", score: 2 },
-                { text: "1–6 months ago", score: 1 },
+                { text: "Within the last week", score: 2 },
+                { text: "Within the last month", score: 1 },
+                { text: "1–6 months ago", score: 0 },
                 { text: "6–12 months ago", score: -1 },
-                { text: "More than a year ago", score: -3 },
-                { text: "I don't remember", score: -2 }
+                { text: "More than a year ago", score: -2 },
+                { text: "I don't remember", score: -1 }
             ]
         },
 
         {
-            question: "Do you own something similar?",
+            question: "Why did you last wear it?",
+            weight: 2,
             answers: [
-                { text: "No", score: 2 },
-                { text: "Yes, one similar item", score: -1 },
-                { text: "Yes, several similar items", score: -3 }
+                { text: "I genuinely wanted to", score: 2 },
+                { text: "It was right for a specific occasion", score: 1 },
+                { text: "I needed something practical to wear", score: 0 },
+                { text: "I felt like I had to wear it", score: -1 },
+                { text: "Someone else chose it for me", score: -1 },
+                { text: "I don't remember", score: 0 }
             ]
         },
 
         {
-            question: "Would you buy it again today?",
+            question: "If you didn't already own this, would you choose to bring it into your life today?",
+            weight: 3,
             answers: [
                 { text: "Definitely", score: 3 },
                 { text: "Probably", score: 2 },
@@ -42,146 +57,123 @@ const questionsByCategory = {
         },
 
         {
-            question: "How much sentimental value does it have?",
+            question: "Do you own something that already fills the same role?",
+            weight: 2,
             answers: [
-                { text: "A lot", score: 3 },
-                { text: "Some", score: 1 },
-                { text: "Very little", score: 0 },
-                { text: "None", score: -1 }
+                { text: "No", score: 2 },
+                { text: "Yes, one similar item", score: -1 },
+                { text: "Yes, several similar items", score: -2 }
+            ]
+        },
+
+        {
+            question: "Would you genuinely miss this if it disappeared tomorrow?",
+            weight: 3,
+            answers: [
+                { text: "Definitely", score: 3 },
+                { text: "Probably", score: 2 },
+                { text: "I'm not sure", score: 0 },
+                { text: "Probably not", score: -2 },
+                { text: "Not at all", score: -3 }
             ]
         }
     ],
 
 
     Electronics: [
+
         {
-            question: "When did you last use it?",
+            question: "When did you last use this because you wanted to?",
+            weight: 1,
             answers: [
-                { text: "Within the last week", score: 3 },
-                { text: "Within the last month", score: 2 },
-                { text: "1–6 months ago", score: 1 },
+                { text: "Within the last week", score: 2 },
+                { text: "Within the last month", score: 1 },
+                { text: "1–6 months ago", score: 0 },
                 { text: "6–12 months ago", score: -1 },
-                { text: "More than a year ago", score: -3 }
+                { text: "More than a year ago", score: -2 },
+                { text: "I don't remember", score: -1 }
             ]
         },
 
         {
-            question: "Do you own a newer alternative?",
-            answers: [
-                { text: "No", score: 2 },
-                { text: "Yes, but I still use this one", score: 1 },
-                { text: "Yes, and I almost never use this", score: -3 }
-            ]
-        },
-
-        {
-            question: "Does it still work properly?",
+            question: "Does it still work the way you need it to?",
+            weight: 2,
             answers: [
                 { text: "Yes, perfectly", score: 2 },
                 { text: "Mostly", score: 1 },
-                { text: "It has some problems", score: -1 },
+                { text: "It has some limitations", score: -1 },
+                { text: "Not really", score: -2 },
                 { text: "No", score: -3 }
             ]
         },
 
         {
-            question: "Would you buy it again today?",
+            question: "If you didn't already own this, would you choose to buy it today?",
+            weight: 3,
             answers: [
                 { text: "Definitely", score: 3 },
                 { text: "Probably", score: 2 },
                 { text: "I'm not sure", score: 0 },
                 { text: "Probably not", score: -2 },
                 { text: "Definitely not", score: -3 }
+            ]
+        },
+
+        {
+            question: "Do you already have another device that does the same job?",
+            weight: 2,
+            answers: [
+                { text: "No", score: 2 },
+                { text: "Yes, but this one has a unique advantage", score: 1 },
+                { text: "Yes, and they are mostly interchangeable", score: -2 }
+            ]
+        },
+
+        {
+            question: "Would you notice its absence in your everyday life?",
+            weight: 3,
+            answers: [
+                { text: "Definitely", score: 3 },
+                { text: "Probably", score: 2 },
+                { text: "I'm not sure", score: 0 },
+                { text: "Probably not", score: -2 },
+                { text: "Not at all", score: -3 }
             ]
         }
     ],
 
 
- Books: [
-    {
-        question: "When did you last read this?",
-        answers: [
-            { text: "Within the last week", score: 1 },
-            { text: "Within the last month", score: 1 },
-            { text: "1–6 months ago", score: 0 },
-            { text: "6–12 months ago", score: -1 },
-            { text: "More than a year ago", score: -2 },
-            { text: "I don't remember", score: -1 }
-        ],
-        weight: 1
-    },
+    Books: [
 
-    {
-        question: "Why did you last read this?",
-        answers: [
-            { text: "I genuinely wanted to", score: 2 },
-            { text: "For school", score: -1 },
-            { text: "For work", score: -1 },
-            { text: "Someone recommended it", score: 1 },
-            { text: "I had to", score: -2 },
-            { text: "Other", score: 0 }
-        ],
-        weight: 2
-    },
-
-    {
-        question: "Would you choose to read it again?",
-        answers: [
-            { text: "Definitely", score: 3 },
-            { text: "Probably", score: 2 },
-            { text: "I'm not sure", score: 0 },
-            { text: "Probably not", score: -2 },
-            { text: "Definitely not", score: -3 }
-        ],
-        weight: 3
-    },
-
-    {
-        question: "Do you realistically expect to read it again within the next 2 years?",
-        answers: [
-            { text: "Definitely", score: 3 },
-            { text: "Probably", score: 2 },
-            { text: "I'm not sure", score: 0 },
-            { text: "Probably not", score: -2 },
-            { text: "Definitely not", score: -3 }
-        ],
-        weight: 3
-    },
-
-    {
-        question: "Does this book have sentimental or personal value to you?",
-        answers: [
-            { text: "A lot", score: 3 },
-            { text: "Some", score: 1 },
-            { text: "Very little", score: 0 },
-            { text: "None", score: -2 }
-        ],
-        weight: 2
-    }
-],
-
-    Beauty: [
         {
-            question: "When did you last use it?",
+            question: "When did you last read this?",
+            weight: 1,
             answers: [
-                { text: "Within the last week", score: 3 },
-                { text: "Within the last month", score: 2 },
+                { text: "Within the last week", score: 1 },
+                { text: "Within the last month", score: 1 },
                 { text: "1–6 months ago", score: 0 },
-                { text: "More than 6 months ago", score: -2 }
+                { text: "6–12 months ago", score: -1 },
+                { text: "More than a year ago", score: -2 },
+                { text: "I don't remember", score: -1 }
             ]
         },
 
         {
-            question: "Do you own a similar product?",
+            question: "Why did you last read it?",
+            weight: 2,
             answers: [
-                { text: "No", score: 2 },
-                { text: "Yes, one", score: -1 },
-                { text: "Yes, several", score: -3 }
+                { text: "I genuinely wanted to", score: 2 },
+                { text: "For school", score: -1 },
+                { text: "For work", score: -1 },
+                { text: "Someone recommended it", score: 1 },
+                { text: "I had to", score: -2 },
+                { text: "I don't remember", score: 0 }
             ]
         },
 
         {
-            question: "Would you buy it again?",
+            question: "If nobody expected you to read this again, would you choose to?",
+            weight: 3,
             answers: [
                 { text: "Definitely", score: 3 },
                 { text: "Probably", score: 2 },
@@ -192,22 +184,100 @@ const questionsByCategory = {
         },
 
         {
-            question: "Is there anything preventing you from using it?",
+            question: "If this disappeared tomorrow, would you feel the need to replace it?",
+            weight: 3,
+            answers: [
+                { text: "Definitely", score: 3 },
+                { text: "Probably", score: 2 },
+                { text: "I'm not sure", score: 0 },
+                { text: "Probably not", score: -2 },
+                { text: "Definitely not", score: -3 }
+            ]
+        },
+
+        {
+            question: "Does this book have personal or sentimental value to you?",
+            weight: 2,
+            answers: [
+                { text: "A lot", score: 3 },
+                { text: "Some", score: 1 },
+                { text: "Very little", score: 0 },
+                { text: "None", score: -2 }
+            ]
+        }
+    ],
+
+
+    Beauty: [
+
+        {
+            question: "When did you last use this because you wanted to?",
+            weight: 1,
+            answers: [
+                { text: "Within the last week", score: 2 },
+                { text: "Within the last month", score: 1 },
+                { text: "1–6 months ago", score: 0 },
+                { text: "More than 6 months ago", score: -2 },
+                { text: "I don't remember", score: -1 }
+            ]
+        },
+
+        {
+            question: "How do you actually feel about using this?",
+            weight: 2,
+            answers: [
+                { text: "I genuinely enjoy it", score: 2 },
+                { text: "I like it", score: 1 },
+                { text: "I'm neutral", score: 0 },
+                { text: "I don't really like it", score: -1 },
+                { text: "I actively avoid it", score: -2 }
+            ]
+        },
+
+        {
+            question: "If you didn't already own this, would you buy it today?",
+            weight: 3,
+            answers: [
+                { text: "Definitely", score: 3 },
+                { text: "Probably", score: 2 },
+                { text: "I'm not sure", score: 0 },
+                { text: "Probably not", score: -2 },
+                { text: "Definitely not", score: -3 }
+            ]
+        },
+
+        {
+            question: "Do you already have another product that does essentially the same thing?",
+            weight: 2,
             answers: [
                 { text: "No", score: 2 },
-                { text: "A small issue", score: 0 },
-                { text: "Yes, a major issue", score: -2 }
+                { text: "Yes, one", score: -1 },
+                { text: "Yes, several", score: -2 }
+            ]
+        },
+
+        {
+            question: "Would you notice if this disappeared tomorrow?",
+            weight: 3,
+            answers: [
+                { text: "Definitely", score: 3 },
+                { text: "Probably", score: 2 },
+                { text: "I'm not sure", score: 0 },
+                { text: "Probably not", score: -2 },
+                { text: "Not at all", score: -3 }
             ]
         }
     ],
 
 
     Home: [
+
         {
-            question: "How often do you use it?",
+            question: "How often do you intentionally use this?",
+            weight: 1,
             answers: [
-                { text: "Every day", score: 3 },
-                { text: "Every week", score: 2 },
+                { text: "Every day", score: 2 },
+                { text: "Every week", score: 1 },
                 { text: "Every few months", score: 0 },
                 { text: "Almost never", score: -2 },
                 { text: "Never", score: -3 }
@@ -215,16 +285,42 @@ const questionsByCategory = {
         },
 
         {
-            question: "Do you own something that serves the same purpose?",
+            question: "When did you last use it because you genuinely wanted to?",
+            weight: 2,
             answers: [
-                { text: "No", score: 2 },
-                { text: "Yes, one", score: -1 },
-                { text: "Yes, several", score: -3 }
+                { text: "Within the last week", score: 2 },
+                { text: "Within the last month", score: 1 },
+                { text: "Several months ago", score: 0 },
+                { text: "More than a year ago", score: -2 },
+                { text: "I don't remember", score: -1 }
             ]
         },
 
         {
-            question: "Would you buy it again today?",
+            question: "If you didn't own this, would you notice its absence?",
+            weight: 3,
+            answers: [
+                { text: "Definitely", score: 3 },
+                { text: "Probably", score: 2 },
+                { text: "I'm not sure", score: 0 },
+                { text: "Probably not", score: -2 },
+                { text: "Not at all", score: -3 }
+            ]
+        },
+
+        {
+            question: "Does another item already do essentially the same job?",
+            weight: 2,
+            answers: [
+                { text: "No", score: 2 },
+                { text: "Yes, but this has a unique advantage", score: 1 },
+                { text: "Yes, almost completely", score: -2 }
+            ]
+        },
+
+        {
+            question: "If you saw this in a store today, would you choose to buy it?",
+            weight: 3,
             answers: [
                 { text: "Definitely", score: 3 },
                 { text: "Probably", score: 2 },
@@ -232,34 +328,28 @@ const questionsByCategory = {
                 { text: "Probably not", score: -2 },
                 { text: "Definitely not", score: -3 }
             ]
-        },
-
-        {
-            question: "Does it have sentimental value?",
-            answers: [
-                { text: "A lot", score: 3 },
-                { text: "Some", score: 1 },
-                { text: "Very little", score: 0 },
-                { text: "None", score: -1 }
-            ]
         }
     ],
 
 
     Hobby: [
+
         {
-            question: "When did you last use it?",
+            question: "When did you last use this because you genuinely wanted to?",
+            weight: 1,
             answers: [
-                { text: "Within the last week", score: 3 },
-                { text: "Within the last month", score: 2 },
-                { text: "1–6 months ago", score: 1 },
+                { text: "Within the last week", score: 2 },
+                { text: "Within the last month", score: 1 },
+                { text: "1–6 months ago", score: 0 },
                 { text: "6–12 months ago", score: -1 },
-                { text: "More than a year ago", score: -3 }
+                { text: "More than a year ago", score: -2 },
+                { text: "I don't remember", score: -1 }
             ]
         },
 
         {
-            question: "Are you still interested in this hobby?",
+            question: "Are you still genuinely interested in this hobby?",
+            weight: 3,
             answers: [
                 { text: "Very much", score: 3 },
                 { text: "Yes, somewhat", score: 1 },
@@ -270,16 +360,30 @@ const questionsByCategory = {
         },
 
         {
-            question: "Do you own similar equipment?",
+            question: "Do you realistically expect to use this again?",
+            weight: 3,
             answers: [
-                { text: "No", score: 2 },
-                { text: "Yes, one", score: -1 },
-                { text: "Yes, several", score: -3 }
+                { text: "Definitely", score: 3 },
+                { text: "Probably", score: 2 },
+                { text: "I'm not sure", score: 0 },
+                { text: "Probably not", score: -2 },
+                { text: "Definitely not", score: -3 }
             ]
         },
 
         {
-            question: "Do you realistically expect to use it again?",
+            question: "Do you own other equipment that can do essentially the same thing?",
+            weight: 2,
+            answers: [
+                { text: "No", score: 2 },
+                { text: "Yes, one alternative", score: -1 },
+                { text: "Yes, several alternatives", score: -2 }
+            ]
+        },
+
+        {
+            question: "If you didn't already own this, would you spend money on it today?",
+            weight: 3,
             answers: [
                 { text: "Definitely", score: 3 },
                 { text: "Probably", score: 2 },
@@ -292,9 +396,9 @@ const questionsByCategory = {
 };
 
 
-/* =========================
-   START APP
-========================= */
+/* =========================================================
+   START
+========================================================= */
 
 function startApp() {
 
@@ -310,9 +414,9 @@ function startApp() {
 }
 
 
-/* =========================
+/* =========================================================
    IMAGE UPLOAD
-========================= */
+========================================================= */
 
 function previewImage(event) {
 
@@ -334,9 +438,9 @@ function previewImage(event) {
 }
 
 
-/* =========================
+/* =========================================================
    STEP NAVIGATION
-========================= */
+========================================================= */
 
 function nextStep(step) {
 
@@ -355,19 +459,29 @@ function showStep(step) {
         section.classList.add("hidden");
     });
 
-    document.getElementById(`step${step}`).classList.remove("hidden");
+    const target = document.getElementById(`step${step}`);
 
-    document.getElementById("progress").style.width =
-        `${step * 25}%`;
+    if (target) {
+        target.classList.remove("hidden");
+    }
 
-    document.getElementById("step-label").textContent =
-        `Step ${step} of 4`;
+    const progress = document.getElementById("progress");
+
+    if (progress) {
+        progress.style.width = `${step * 25}%`;
+    }
+
+    const label = document.getElementById("step-label");
+
+    if (label) {
+        label.textContent = `Step ${step} of 4`;
+    }
 }
 
 
-/* =========================
+/* =========================================================
    CATEGORY
-========================= */
+========================================================= */
 
 function selectCategory(button, category) {
 
@@ -383,22 +497,29 @@ function selectCategory(button, category) {
 }
 
 
-/* =========================
-   GENERATE QUESTIONS
-========================= */
+/* =========================================================
+   QUESTIONS
+========================================================= */
 
 function generateQuestions() {
 
-    const container = document.getElementById("questions");
+    const container =
+        document.getElementById("questions");
 
     container.innerHTML = "";
 
     const questions =
         questionsByCategory[selectedCategory];
 
+    if (!questions) {
+        console.error("No questions found for:", selectedCategory);
+        return;
+    }
+
     questions.forEach((question, index) => {
 
-        const wrapper = document.createElement("div");
+        const wrapper =
+            document.createElement("div");
 
         wrapper.className = "question";
 
@@ -411,17 +532,19 @@ function generateQuestions() {
         question.answers.forEach((answer, answerIndex) => {
 
             options += `
-                <option value="${answer.score}">
+                <option value="${answerIndex}">
                     ${answer.text}
                 </option>
             `;
-
         });
 
         wrapper.innerHTML = `
             <label>${question.question}</label>
 
-            <select class="answer">
+            <select
+                class="answer"
+                data-question="${index}"
+            >
                 ${options}
             </select>
         `;
@@ -433,148 +556,266 @@ function generateQuestions() {
 }
 
 
-/* =========================
-   ANALYZE
-========================= */
+/* =========================================================
+   DECISION ENGINE
+========================================================= */
 
 function analyzeItem() {
 
     const selects =
         document.querySelectorAll(".answer");
 
-    let totalScore = 0;
+    const questions =
+        questionsByCategory[selectedCategory];
+
+    let weightedScore = 0;
+    let totalWeight = 0;
+
     let answeredQuestions = 0;
 
-    selects.forEach(select => {
+    questions.forEach((question, index) => {
 
-        if (select.value !== "") {
+        const select = selects[index];
 
-            totalScore += Number(select.value);
-            answeredQuestions++;
-
+        if (!select || select.value === "") {
+            return;
         }
+
+        const answerIndex =
+            Number(select.value);
+
+        const answer =
+            question.answers[answerIndex];
+
+        weightedScore +=
+            answer.score * question.weight;
+
+        totalWeight +=
+            3 * question.weight;
+
+        answeredQuestions++;
     });
 
 
-    /*
-        If the user didn't answer everything,
-        don't generate a result yet.
-    */
+    /* -----------------------------------------
+       Require every question
+    ----------------------------------------- */
 
-    if (answeredQuestions < selects.length) {
+    if (answeredQuestions < questions.length) {
 
         alert(
-            "Please answer all questions before continuing."
+            "Please answer every question before continuing."
         );
 
         return;
     }
 
 
-    /*
-        Calculate average score.
+    /* -----------------------------------------
+       Normalize score to -3 → +3
+    ----------------------------------------- */
 
-        Maximum possible score = 3
-        Minimum possible score = -3
-    */
-
-    const averageScore =
-        totalScore / selects.length;
+    const normalizedScore =
+        weightedScore /
+        (totalWeight / 3);
 
 
-    let recommendation;
+    /* -----------------------------------------
+       CLASSIFY
+    ----------------------------------------- */
+
+    let result;
+    let resultClass;
     let reasoning;
-    let icon;
+    let reflection;
 
 
-    /* =========================
-       DECISION ENGINE
-    ========================= */
+    if (normalizedScore >= 1.7) {
 
-    if (averageScore >= 1.5) {
-
-        recommendation = "KEEP";
-        icon = "✓";
+        result = "CLEAR KEEP";
+        resultClass = "keep";
 
         reasoning =
-            "You use this item regularly, see value in keeping it, " +
-            "and don't have strong reasons to replace or remove it.";
+            "Your answers consistently suggest that this item " +
+            "still adds meaningful value to your life. You use it " +
+            "intentionally, value what it provides, or would notice " +
+            "its absence.";
+
+        reflection =
+            "What specifically makes this item worth keeping? " +
+            "That may be the reason you should continue making space for it.";
 
     }
 
-    else if (averageScore >= 0.3) {
+    else if (normalizedScore >= 0.7) {
 
-        recommendation = "KEEP";
-        icon = "✓";
+        result = "KEEP — BUT THINK";
+        resultClass = "consider";
 
         reasoning =
-            "There are good reasons to keep this item, although " +
-            "it may not be something you use constantly.";
+            "There are meaningful reasons to keep this item, " +
+            "but some of your answers suggest that its role in " +
+            "your life may have changed.";
+
+        reflection =
+            "Are you keeping this because it still serves you, " +
+            "or because it once did?";
 
     }
 
-    else if (averageScore >= -0.7) {
+    else if (normalizedScore > -0.7) {
 
-        recommendation = "STORE";
-        icon = "□";
+        result = "UNCERTAIN";
+        resultClass = "uncertain";
 
         reasoning =
-            "Your answers are mixed. You don't seem ready to let " +
-            "this item go, but you also don't use it enough to justify " +
-            "keeping it immediately accessible.";
+            "Your answers point in different directions. " +
+            "There are reasons to keep this item, but also reasons " +
+            "to question whether it still belongs in your life.";
+
+        reflection =
+            "You don't need to make a decision today. " +
+            "Try asking yourself what you would actually miss about it.";
 
     }
 
-    else if (averageScore >= -1.7) {
+    else if (normalizedScore > -1.7) {
 
-        recommendation = "DONATE";
-        icon = "♡";
+        result = "LEANING TOWARD LETTING GO";
+        resultClass = "let-go";
 
         reasoning =
-            "Your answers suggest that you don't use this item often " +
-            "and don't see enough personal value in keeping it.";
+            "Most of your answers suggest that this item may no " +
+            "longer provide enough value to justify keeping it, " +
+            "although there are still some reasons to hold onto it.";
+
+        reflection =
+            "Are you keeping it for what it currently gives you, " +
+            "or for a possible future use?";
 
     }
 
     else {
 
-        recommendation = "SELL";
-        icon = "↗";
+        result = "CLEAR LET GO";
+        resultClass = "strong-let-go";
 
         reasoning =
-            "You rarely use this item, have limited attachment to it, " +
-            "and don't see yourself choosing it again. If it has resale " +
-            "value, selling it could be the best option.";
+            "Your answers consistently point away from keeping this item. " +
+            "You don't seem to use it intentionally, value it strongly, " +
+            "or expect it to play an important role in your future.";
+
+        reflection =
+            "If this disappeared tomorrow, what would you actually lose?";
 
     }
 
 
-    /*
-        Confidence based on how strongly
-        the answers point in one direction.
-    */
+    /* -----------------------------------------
+       CONFIDENCE
+    ----------------------------------------- */
 
-    let confidence =
-        Math.round(
-            60 + Math.min(Math.abs(averageScore) / 3 * 35, 35)
-        );
+    const distance =
+        Math.abs(normalizedScore);
+
+    let confidence;
+
+    if (distance >= 2) {
+        confidence = "High";
+    }
+
+    else if (distance >= 1) {
+        confidence = "Moderate";
+    }
+
+    else {
+        confidence = "Low";
+    }
 
 
-    /*
-        Update UI
-    */
+    /* -----------------------------------------
+       UPDATE RESULT UI
+    ----------------------------------------- */
 
-    document.getElementById("recommendation").textContent =
-        recommendation;
+    const recommendation =
+        document.getElementById("recommendation");
 
-    document.getElementById("confidence").textContent =
-        `${confidence}%`;
+    if (recommendation) {
+        recommendation.textContent = result;
+    }
 
-    document.getElementById("reasoningText").textContent =
-        reasoning;
+    const confidenceElement =
+        document.getElementById("confidence");
 
-    document.getElementById("resultIcon").textContent =
-        icon;
+    if (confidenceElement) {
+        confidenceElement.textContent =
+            `${confidence} confidence`;
+    }
+
+    const reasoningElement =
+        document.getElementById("reasoningText");
+
+    if (reasoningElement) {
+        reasoningElement.textContent =
+            reasoning;
+    }
+
+    const icon =
+        document.getElementById("resultIcon");
+
+    if (icon) {
+
+        if (resultClass === "keep") {
+            icon.textContent = "✓";
+        }
+
+        else if (resultClass === "consider") {
+            icon.textContent = "○";
+        }
+
+        else if (resultClass === "uncertain") {
+            icon.textContent = "?";
+        }
+
+        else {
+            icon.textContent = "↘";
+        }
+    }
+
+
+    /* -----------------------------------------
+       Add reflection if HTML supports it
+    ----------------------------------------- */
+
+    let reflectionElement =
+        document.getElementById("reflectionText");
+
+    if (!reflectionElement) {
+
+        const reasoningContainer =
+            document.getElementById("reasoningText");
+
+        if (reasoningContainer) {
+
+            reflectionElement =
+                document.createElement("p");
+
+            reflectionElement.id =
+                "reflectionText";
+
+            reflectionElement.className =
+                "reflection-text";
+
+            reasoningContainer.parentNode.appendChild(
+                reflectionElement
+            );
+        }
+    }
+
+    if (reflectionElement) {
+        reflectionElement.textContent =
+            reflection;
+    }
 
 
     showStep(4);
@@ -586,36 +827,55 @@ function analyzeItem() {
 }
 
 
-/* =========================
+/* =========================================================
    NEW ITEM
-========================= */
+========================================================= */
 
 function newItem() {
 
     uploadedImage = null;
     selectedCategory = "";
 
-    document.getElementById("imageInput").value = "";
+    const imageInput =
+        document.getElementById("imageInput");
 
-    document
-        .getElementById("imagePreview")
-        .classList.add("hidden");
+    if (imageInput) {
+        imageInput.value = "";
+    }
 
-    document
-        .getElementById("uploadContent")
-        .classList.remove("hidden");
+    const preview =
+        document.getElementById("imagePreview");
 
-    document
-        .getElementById("imageContinue")
-        .disabled = true;
+    if (preview) {
+        preview.classList.add("hidden");
+    }
+
+    const uploadContent =
+        document.getElementById("uploadContent");
+
+    if (uploadContent) {
+        uploadContent.classList.remove("hidden");
+    }
+
+    const imageContinue =
+        document.getElementById("imageContinue");
+
+    if (imageContinue) {
+        imageContinue.disabled = true;
+    }
 
     document
         .querySelectorAll(".category-grid button")
-        .forEach(btn => btn.classList.remove("selected"));
+        .forEach(btn =>
+            btn.classList.remove("selected")
+        );
 
-    document
-        .getElementById("categoryContinue")
-        .disabled = true;
+    const categoryContinue =
+        document.getElementById("categoryContinue");
+
+    if (categoryContinue) {
+        categoryContinue.disabled = true;
+    }
 
     showStep(1);
 
@@ -626,13 +886,13 @@ function newItem() {
 }
 
 
-/* =========================
+/* =========================================================
    SAVE
-========================= */
+========================================================= */
 
 function saveItem() {
 
     alert(
-        "Saved! Your personal inventory will be available in a future version."
+        "Saved! A personal item history will be available in a future version."
     );
 }
