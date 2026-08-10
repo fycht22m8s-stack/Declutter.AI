@@ -97,49 +97,68 @@ const questionsByCategory = {
     ],
 
 
-    Books: [
-        {
-            question: "Have you read this book?",
-            answers: [
-                { text: "Yes, recently", score: 2 },
-                { text: "Yes, but a long time ago", score: 1 },
-                { text: "No, but I plan to", score: 1 },
-                { text: "No, and realistically I won't", score: -3 }
-            ]
-        },
+ Books: [
+    {
+        question: "When did you last read this?",
+        answers: [
+            { text: "Within the last week", score: 1 },
+            { text: "Within the last month", score: 1 },
+            { text: "1–6 months ago", score: 0 },
+            { text: "6–12 months ago", score: -1 },
+            { text: "More than a year ago", score: -2 },
+            { text: "I don't remember", score: -1 }
+        ],
+        weight: 1
+    },
 
-        {
-            question: "Will you realistically read it in the next year?",
-            answers: [
-                { text: "Definitely", score: 3 },
-                { text: "Probably", score: 1 },
-                { text: "I'm not sure", score: 0 },
-                { text: "Probably not", score: -2 },
-                { text: "Definitely not", score: -3 }
-            ]
-        },
+    {
+        question: "Why did you last read this?",
+        answers: [
+            { text: "I genuinely wanted to", score: 2 },
+            { text: "For school", score: -1 },
+            { text: "For work", score: -1 },
+            { text: "Someone recommended it", score: 1 },
+            { text: "I had to", score: -2 },
+            { text: "Other", score: 0 }
+        ],
+        weight: 2
+    },
 
-        {
-            question: "Would you recommend this book to someone?",
-            answers: [
-                { text: "Absolutely", score: 2 },
-                { text: "Maybe", score: 0 },
-                { text: "Probably not", score: -1 },
-                { text: "Definitely not", score: -2 }
-            ]
-        },
+    {
+        question: "Would you choose to read it again?",
+        answers: [
+            { text: "Definitely", score: 3 },
+            { text: "Probably", score: 2 },
+            { text: "I'm not sure", score: 0 },
+            { text: "Probably not", score: -2 },
+            { text: "Definitely not", score: -3 }
+        ],
+        weight: 3
+    },
 
-        {
-            question: "Does it have sentimental value?",
-            answers: [
-                { text: "A lot", score: 3 },
-                { text: "Some", score: 1 },
-                { text: "Very little", score: 0 },
-                { text: "None", score: -1 }
-            ]
-        }
-    ],
+    {
+        question: "Do you realistically expect to read it again within the next 2 years?",
+        answers: [
+            { text: "Definitely", score: 3 },
+            { text: "Probably", score: 2 },
+            { text: "I'm not sure", score: 0 },
+            { text: "Probably not", score: -2 },
+            { text: "Definitely not", score: -3 }
+        ],
+        weight: 3
+    },
 
+    {
+        question: "Does this book have sentimental or personal value to you?",
+        answers: [
+            { text: "A lot", score: 3 },
+            { text: "Some", score: 1 },
+            { text: "Very little", score: 0 },
+            { text: "None", score: -2 }
+        ],
+        weight: 2
+    }
+],
 
     Beauty: [
         {
