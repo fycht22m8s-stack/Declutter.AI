@@ -1156,35 +1156,47 @@ function generateQuestions() {
 
 async function analyzeItem() {
 
-    const selects = document.querySelectorAll(".answer");
+    const selects =
+        document.querySelectorAll(".answer");
 
-    if (!currentQuestions || currentQuestions.length === 0) {
+    if (
+        !currentQuestions ||
+        currentQuestions.length === 0
+    ) {
         return;
     }
 
     const answers = [];
-    let answered = 0;
 
-    currentQuestions.forEach((question, index) => {
+    currentQuestions.forEach(
+        (question, index) => {
 
-        const select = selects[index];
+            const select = selects[index];
 
-        if (!select || select.value === "") {
-            return;
+            if (
+                !select ||
+                select.value === ""
+            ) {
+                return;
+            }
+
+            const answerIndex =
+                Number(select.value);
+
+            const answer =
+                question.answers[answerIndex];
+
+            answers.push({
+                question: question.question,
+                answer: answer[0]
+            });
         }
+    );
 
-        const answerIndex = Number(select.value);
-        const answer = question.answers[answerIndex];
-
-        answers.push({
-            question: question.question,
-            answer: answer[0]
-        });
-
-        answered++;
-    });
-
-    if (answered < currentQuestions.length) {
+    if (
+        answers.length <
+        currentQuestions.length
+    ) {
 
         alert(
             "Please answer every question before continuing."
@@ -1195,165 +1207,92 @@ async function analyzeItem() {
 
 
     /* =========================================
-       LOADING STATE
-    ========================================= */
-
-    const button =
-        document.querySelector(
-            "#step3 .primary-button"
-        );
-
-    if (button) {
-        button.disabled = true;
-        button.textContent = "Thinking... ✦";
-    }
-
-
-    /* =========================================
-       BUILD AI PROMPT
-    ========================================= */
-
-    const prompt = `
-You are analyzing an item for Declutter.AI.
-
-Your job is NOT simply to tell the user to get rid of things.
-
-Declutter.AI helps people gain perspective about their possessions.
-
-The user should feel that the recommendation is based on THEIR answers.
-
-Consider:
-- current usefulness
-- actual frequency of use
-- emotional value
-- future usefulness
-- alternatives
-- whether the item would be missed
-- whether the user would choose to own it again
-- contradictions between answers
-
-Category:
-${selectedCategory}
-
-Role:
-${selectedRole}
-
-Answers:
-
-${answers
-    .map(
-        (item, index) =>
-            `${index + 1}. ${item.question}
-Answer: ${item.answer}`
-    )
-    .join("\n\n")}
-
-Give a thoughtful recommendation.
-
-Possible recommendations:
-
-CLEAR KEEP
-KEEP — BUT THINK
-UNCERTAIN
-LEANING TOWARD LETTING GO
-CLEAR LET GO
-
-Do NOT automatically recommend getting rid of something.
-
-If the answers are contradictory, acknowledge that.
-
-Return ONLY valid JSON in this exact format:
-
-{
-  "result": "CLEAR KEEP",
-  "confidence": "High",
-  "reasoning": "2-4 sentences explaining the decision using the user's answers.",
-  "reflection": "One thoughtful question that helps the user reflect."
-}
-`;
-
-
-    /* =========================================
-       CALL CLOUDFLARE WORKER
+       SEND DATA TO DECLUTTER AI
     ========================================= */
 
     try {
 
-        const response = await fetch(
-            "https://declutter-ai-api.plewko-olga.workers.dev/",
-            {
-                method: "POST",
+        const response =
+            await fetch(
+                "https://declutter-ai-api.plewko-olga.workers.dev/",
+                {
+                    method: "POST",
 
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-                body: JSON.stringify({
-                    message: prompt
-                })
-            }
-        );
+                    body: JSON.stringify({
 
+                        category:
+                            selectedCategory,
 
-        if (!response.ok) {
+                        role:
+                            selectedRole,
 
-            throw new Error(
-                `AI request failed: ${response.status}`
+                        answers:
+                            answers
+                    })
+                }
             );
 
-        }
+
+        const data =
+            await response.json();
 
 
-        const data = await response.json();
+        if (
+            !response.ok ||
+            !data.result
+        ) {
 
-
-        /* =========================================
-           GET AI TEXT
-        ========================================= */
-
-        const aiText =
-            data?.choices?.[0]?.message?.content;
-
-
-        if (!aiText) {
             throw new Error(
-                "AI returned no response."
+                "AI request failed."
             );
         }
 
 
-        /* =========================================
-           PARSE JSON
-        ========================================= */
+        /* =====================================
+           GET AI RESPONSE
+        ===================================== */
 
-        let result;
+        const aiContent =
+            data.result
+                ?.choices?.[0]
+                ?.message?.content;
 
-        try {
 
-            result =
-                JSON.parse(aiText);
+        if (!aiContent) {
 
-        } catch {
-
-            /*
-               Some models may wrap JSON
-               inside ```json ... ```
-            */
-
-            const cleaned =
-                aiText
-                    .replace(/```json/gi, "")
-                    .replace(/```/g, "")
-                    .trim();
-
-            result =
-                JSON.parse(cleaned);
+            throw new Error(
+                "AI returned no content."
+            );
         }
 
 
-        /* =========================================
-           RESULT UI
-        ========================================= */
+        /* =====================================
+           REMOVE MARKDOWN CODE BLOCK
+        ===================================== */
+
+        const cleanedContent =
+            aiContent
+                .replace(/```json/gi, "")
+                .replace(/```/g, "")
+                .trim();
+
+
+        /* =====================================
+           PARSE AI JSON
+        ===================================== */
+
+        const aiResult =
+            JSON.parse(cleanedContent);
+
+
+        /* =====================================
+           DISPLAY RESULT
+        ===================================== */
 
         const recommendation =
             document.getElementById(
@@ -1363,8 +1302,8 @@ Return ONLY valid JSON in this exact format:
         if (recommendation) {
 
             recommendation.textContent =
-                result.result || "UNCERTAIN";
-
+                aiResult.recommendation
+                    .replace(/_/g, " ");
         }
 
 
@@ -1375,9 +1314,15 @@ Return ONLY valid JSON in this exact format:
 
         if (confidenceElement) {
 
-            confidenceElement.textContent =
-                `${result.confidence || "Moderate"} confidence`;
+            const confidence =
+                Math.round(
+                    Number(
+                        aiResult.confidence
+                    )
+                );
 
+            confidenceElement.textContent =
+                `${confidence}% confidence`;
         }
 
 
@@ -1389,85 +1334,37 @@ Return ONLY valid JSON in this exact format:
         if (reasoningElement) {
 
             reasoningElement.textContent =
-                result.reasoning ||
-                "Your answers suggest there are several things worth considering.";
-
+                aiResult.reasoning || "";
         }
 
 
-        let reflectionElement =
+        const reflectionElement =
             document.getElementById(
                 "reflectionText"
             );
 
-
-        if (!reflectionElement) {
-
-            const parent =
-                reasoningElement?.parentNode;
-
-            if (parent) {
-
-                reflectionElement =
-                    document.createElement("p");
-
-                reflectionElement.id =
-                    "reflectionText";
-
-                reflectionElement.className =
-                    "reflection-text";
-
-                parent.appendChild(
-                    reflectionElement
-                );
-
-            }
-
-        }
-
-
         if (reflectionElement) {
 
             reflectionElement.textContent =
-                result.reflection ||
-                "What would you actually miss if this disappeared?";
+                aiResult.reflection || "";
         }
 
 
-        /* =========================================
-           SHOW RESULT
-        ========================================= */
-
-        showStep(4);
+        showStep(5);
 
 
     } catch (error) {
 
         console.error(
             "Declutter AI error:",
-            error.message,
-    error
+            error
         );
 
         alert(
             "Something went wrong while analyzing your item. Please try again."
         );
-
-    } finally {
-
-        if (button) {
-
-            button.disabled = false;
-
-            button.textContent =
-                "Analyze my item →";
-
-        }
-
     }
-
 }
-
 
 /* =========================================================
    RESET
