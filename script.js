@@ -1322,7 +1322,7 @@ async function analyzeItem() {
                 );
 
             confidenceElement.textContent =
-                `${confidence}% confidence`;
+                `${confidence}%`;
         }
 
 
