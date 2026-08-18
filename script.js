@@ -1,5 +1,5 @@
 /* =========================================================
-   DECLUTTER.AI — VISION + ADAPTIVE CHAT ENGINE
+   DECLUTTER.AI — CHAT ENGINE
 ========================================================= */
 
 
@@ -9,14 +9,12 @@
 
 let selectedCategory = "";
 let selectedRole = "";
-
 let uploadedImage = null;
-let imageDataUrl = "";
 
 let itemType = "";
-let itemIdentificationConfidence = 0;
 
 let conversation = [];
+
 let chatBusy = false;
 
 
@@ -53,7 +51,7 @@ function startApp() {
 
 
 /* =========================================================
-   IMAGE PREVIEW + CONVERT TO BASE64
+   IMAGE PREVIEW
 ========================================================= */
 
 function previewImage(event) {
@@ -75,15 +73,14 @@ function previewImage(event) {
 
     if (preview) {
 
-        const objectUrl =
+        preview.src =
             URL.createObjectURL(file);
-
-        preview.src = objectUrl;
 
         preview.classList.remove("hidden");
     }
 
     if (content) {
+
         content.classList.add("hidden");
     }
 
@@ -91,33 +88,9 @@ function previewImage(event) {
         document.getElementById("imageContinue");
 
     if (button) {
+
         button.disabled = false;
     }
-
-    /*
-       Convert image to base64 so it can
-       be sent to the Worker.
-    */
-
-    const reader =
-        new FileReader();
-
-    reader.onload = function () {
-
-        imageDataUrl =
-            reader.result;
-    };
-
-    reader.onerror = function () {
-
-        console.error(
-            "Could not read image."
-        );
-
-        imageDataUrl = "";
-    };
-
-    reader.readAsDataURL(file);
 }
 
 
@@ -135,22 +108,20 @@ function showStep(step) {
 
         });
 
+
     const target =
-        document.getElementById(
-            `step${step}`
-        );
+        document.getElementById(`step${step}`);
+
 
     if (target) {
 
-        target.classList.remove(
-            "hidden"
-        );
+        target.classList.remove("hidden");
     }
 
+
     const progress =
-        document.getElementById(
-            "progress"
-        );
+        document.getElementById("progress");
+
 
     if (progress) {
 
@@ -161,16 +132,17 @@ function showStep(step) {
             `${percentage}%`;
     }
 
+
     const label =
-        document.getElementById(
-            "step-label"
-        );
+        document.getElementById("step-label");
+
 
     if (label) {
 
         label.textContent =
             `Step ${step} of 4`;
     }
+
 
     window.scrollTo({
         top: 0,
@@ -199,28 +171,24 @@ function selectCategory(
 ) {
 
     document
-        .querySelectorAll(
-            ".category-grid button"
-        )
+        .querySelectorAll(".category-grid button")
         .forEach(btn => {
 
-            btn.classList.remove(
-                "selected"
-            );
+            btn.classList.remove("selected");
 
         });
 
-    button.classList.add(
-        "selected"
-    );
+
+    button.classList.add("selected");
+
 
     selectedCategory =
         category;
 
+
     const continueButton =
-        document.getElementById(
-            "categoryContinue"
-        );
+        document.getElementById("categoryContinue");
+
 
     if (continueButton) {
 
@@ -292,15 +260,8 @@ const rolesByCategory = {
         "Collection",
         "Creative project",
         "Other"
-    ],
-
-    Other: [
-        "Everyday",
-        "Occasional use",
-        "Backup",
-        "Sentimental",
-        "Other"
     ]
+
 };
 
 
@@ -313,6 +274,7 @@ function generateRoles() {
     const container =
         document.getElementById("roles");
 
+
     if (!container) {
 
         console.error(
@@ -322,12 +284,13 @@ function generateRoles() {
         return;
     }
 
+
     container.innerHTML = "";
 
+
     const roles =
-        rolesByCategory[
-            selectedCategory
-        ];
+        rolesByCategory[selectedCategory];
+
 
     if (!roles) {
 
@@ -339,18 +302,24 @@ function generateRoles() {
         return;
     }
 
+
     roles.forEach(role => {
 
         const button =
             document.createElement("button");
 
-        button.type = "button";
+
+        button.type =
+            "button";
+
 
         button.textContent =
             role;
 
+
         button.className =
             "role-button";
+
 
         button.onclick = () => {
 
@@ -361,11 +330,13 @@ function generateRoles() {
 
         };
 
+
         container.appendChild(
             button
         );
 
     });
+
 
     showStep(3);
 }
@@ -381,28 +352,24 @@ function selectRole(
 ) {
 
     document
-        .querySelectorAll(
-            ".role-button"
-        )
+        .querySelectorAll(".role-button")
         .forEach(btn => {
 
-            btn.classList.remove(
-                "selected"
-            );
+            btn.classList.remove("selected");
 
         });
 
-    button.classList.add(
-        "selected"
-    );
+
+    button.classList.add("selected");
+
 
     selectedRole =
         role;
 
+
     const continueButton =
-        document.getElementById(
-            "roleContinue"
-        );
+        document.getElementById("roleContinue");
+
 
     if (continueButton) {
 
@@ -427,6 +394,7 @@ async function generateQuestions() {
         return;
     }
 
+
     if (!selectedRole) {
 
         alert(
@@ -436,26 +404,27 @@ async function generateQuestions() {
         return;
     }
 
+
     conversation = [];
 
     itemType = "";
 
-    itemIdentificationConfidence = 0;
 
     const chatWindow =
-        document.getElementById(
-            "chatWindow"
-        );
+        document.getElementById("chatWindow");
+
 
     if (chatWindow) {
 
         chatWindow.innerHTML = "";
     }
 
+
     const confirmation =
         document.getElementById(
             "itemConfirmationText"
         );
+
 
     if (confirmation) {
 
@@ -463,191 +432,11 @@ async function generateQuestions() {
             `${selectedCategory} · ${selectedRole}`;
     }
 
+
     showStep(4);
 
-    /*
-       IMPORTANT:
-       First identify the item from the image.
-       Only after that start the adaptive chat.
-    */
 
-    await identifyItem();
-}
-
-
-/* =========================================================
-   IDENTIFY ITEM FROM IMAGE
-========================================================= */
-
-async function identifyItem() {
-
-    if (chatBusy) {
-        return;
-    }
-
-    chatBusy = true;
-
-    addTypingMessage();
-
-    try {
-
-        const response =
-            await fetch(
-                API_URL,
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify({
-
-                        mode: "identify",
-
-                        category:
-                            selectedCategory,
-
-                        role:
-                            selectedRole,
-
-                        image:
-                            imageDataUrl
-
-                    })
-                }
-            );
-
-
-        const data =
-            await response.json();
-
-        removeTypingMessage();
-
-
-        if (!response.ok) {
-
-            console.error(
-                "Identification API error:",
-                data
-            );
-
-            throw new Error(
-                "AI identification failed."
-            );
-        }
-
-
-        const aiContent =
-            data
-                ?.result
-                ?.choices?.[0]
-                ?.message
-                ?.content;
-
-
-        if (!aiContent) {
-
-            console.error(
-                "Empty identification response:",
-                data
-            );
-
-            throw new Error(
-                "AI returned no identification."
-            );
-        }
-
-
-        const parsed =
-            parseAIResponse(
-                aiContent
-            );
-
-
-        if (!parsed) {
-
-            console.error(
-                "Could not parse identification:",
-                aiContent
-            );
-
-            throw new Error(
-                "Could not understand AI identification."
-            );
-        }
-
-
-        itemType =
-            parsed.itemType ||
-            "unknown item";
-
-        itemIdentificationConfidence =
-            Number(
-                parsed.confidence || 0
-            );
-
-
-        /*
-           Show AI's identification
-           as the first chat message.
-        */
-
-        addChatMessage(
-            "ai",
-            parsed.openingQuestion ||
-            `I think this is ${itemType}. Is that correct?`
-        );
-
-
-        conversation.push({
-
-            role: "assistant",
-
-            content:
-                parsed.openingQuestion ||
-                `I think this is ${itemType}. Is that correct?`
-
-        });
-
-
-    } catch (error) {
-
-        removeTypingMessage();
-
-        console.error(
-            "Declutter AI identification error:",
-            error
-        );
-
-        /*
-           If identification fails,
-           don't completely kill the app.
-           Start chat anyway.
-        */
-
-        addChatMessage(
-            "ai",
-            "I’m having a little trouble identifying the item from the photo. What exactly is it?"
-        );
-
-
-        conversation.push({
-
-            role: "assistant",
-
-            content:
-                "I’m having a little trouble identifying the item from the photo. What exactly is it?"
-
-        });
-
-    } finally {
-
-        chatBusy = false;
-
-        updateChatButton();
-    }
+    await askAI();
 }
 
 
@@ -661,9 +450,12 @@ async function askAI() {
         return;
     }
 
+
     chatBusy = true;
 
+
     addTypingMessage();
+
 
     try {
 
@@ -696,12 +488,14 @@ async function askAI() {
                             conversation
 
                     })
+
                 }
             );
 
 
         const data =
             await response.json();
+
 
         removeTypingMessage();
 
@@ -760,10 +554,22 @@ async function askAI() {
         }
 
 
+        /* =====================================
+           AI QUESTION
+        ===================================== */
+
         if (
             parsed.type ===
             "question"
         ) {
+
+            if (!parsed.question) {
+
+                throw new Error(
+                    "AI question was empty."
+                );
+            }
+
 
             addChatMessage(
                 "ai",
@@ -784,6 +590,10 @@ async function askAI() {
             return;
         }
 
+
+        /* =====================================
+           AI RESULT
+        ===================================== */
 
         if (
             parsed.type ===
@@ -820,6 +630,7 @@ async function askAI() {
 
         removeTypingMessage();
 
+
         console.error(
             "Declutter AI error:",
             error
@@ -844,9 +655,7 @@ async function askAI() {
    PARSE AI RESPONSE
 ========================================================= */
 
-function parseAIResponse(
-    content
-) {
+function parseAIResponse(content) {
 
     if (!content) {
         return null;
@@ -854,36 +663,53 @@ function parseAIResponse(
 
 
     let cleaned =
-        String(content)
-            .trim();
+        String(content).trim();
 
 
-    /*
-       Remove markdown fences.
-    */
+    console.log(
+        "RAW AI RESPONSE:",
+        cleaned
+    );
+
+
+    /* ==========================================
+       REMOVE MARKDOWN CODE BLOCKS
+    ========================================== */
 
     cleaned =
         cleaned
             .replace(
-                /^```(?:json)?/i,
+                /^```json\s*/i,
                 ""
             )
             .replace(
-                /```$/i,
+                /^```\s*/i,
+                ""
+            )
+            .replace(
+                /\s*```$/i,
                 ""
             )
             .trim();
 
 
-    /*
-       Direct JSON.
-    */
+    /* ==========================================
+       DIRECT JSON
+    ========================================== */
 
     try {
 
-        return JSON.parse(
-            cleaned
-        );
+        const parsed =
+            JSON.parse(cleaned);
+
+
+        if (
+            parsed &&
+            typeof parsed === "object"
+        ) {
+
+            return parsed;
+        }
 
     } catch (error) {
 
@@ -894,12 +720,13 @@ function parseAIResponse(
     }
 
 
-    /*
-       Find first { and last }.
-    */
+    /* ==========================================
+       EXTRACT JSON FROM SURROUNDING TEXT
+    ========================================== */
 
     const firstBrace =
         cleaned.indexOf("{");
+
 
     const lastBrace =
         cleaned.lastIndexOf("}");
@@ -920,19 +747,62 @@ function parseAIResponse(
 
         try {
 
-            return JSON.parse(
-                jsonPart
-            );
+            const parsed =
+                JSON.parse(jsonPart);
+
+
+            if (
+                parsed &&
+                typeof parsed === "object"
+            ) {
+
+                return parsed;
+            }
 
         } catch (error) {
 
-            console.error(
-                "JSON extraction failed:",
-                error
+            console.warn(
+                "JSON extraction failed."
             );
 
         }
+
     }
+
+
+    /* ==========================================
+       PLAIN QUESTION FALLBACK
+    ========================================== */
+
+    if (
+        cleaned.includes("?")
+    ) {
+
+        console.warn(
+            "AI returned a plain question. Converting automatically."
+        );
+
+
+        return {
+
+            type: "question",
+
+            question:
+                cleaned
+
+        };
+
+    }
+
+
+    /* ==========================================
+       NOTHING UNDERSTOOD
+    ========================================== */
+
+    console.error(
+        "Could not parse AI response:",
+        cleaned
+    );
 
 
     return null;
@@ -987,25 +857,8 @@ async function sendChatMessage() {
 
     input.value = "";
 
+
     autoResizeInput();
-
-    updateChatButton();
-
-
-    /*
-       If the user is correcting
-       the AI's identification,
-       update itemType locally too.
-    */
-
-    if (
-        !itemType ||
-        itemType === "unknown item"
-    ) {
-
-        itemType =
-            text;
-    }
 
 
     await askAI();
@@ -1115,6 +968,7 @@ function removeTypingMessage() {
 
 
     if (typing) {
+
         typing.remove();
     }
 }
@@ -1280,9 +1134,7 @@ document.addEventListener(
    SHOW RESULT
 ========================================================= */
 
-function showResult(
-    result
-) {
+function showResult(result) {
 
     const recommendation =
         document.getElementById(
@@ -1308,6 +1160,10 @@ function showResult(
         );
 
 
+    /* =====================================
+       RECOMMENDATION
+    ===================================== */
+
     if (recommendation) {
 
         recommendation.textContent =
@@ -1323,20 +1179,41 @@ function showResult(
     }
 
 
+    /* =====================================
+       CONFIDENCE
+    ===================================== */
+
     if (confidence) {
 
-        const value =
-            Math.round(
-                Number(
-                    result.confidence
-                )
+        const numericConfidence =
+            Number(
+                result.confidence
             );
 
 
-        confidence.textContent =
-            `${value}% confidence`;
+        if (
+            Number.isFinite(
+                numericConfidence
+            )
+        ) {
+
+            confidence.textContent =
+                `${Math.round(
+                    numericConfidence
+                )}% confidence`;
+
+        } else {
+
+            confidence.textContent =
+                "Moderate confidence";
+
+        }
     }
 
+
+    /* =====================================
+       REASONING
+    ===================================== */
 
     if (reasoning) {
 
@@ -1346,6 +1223,10 @@ function showResult(
     }
 
 
+    /* =====================================
+       REFLECTION
+    ===================================== */
+
     if (reflection) {
 
         reflection.textContent =
@@ -1353,6 +1234,10 @@ function showResult(
             "";
     }
 
+
+    /* =====================================
+       RESULT ICON
+    ===================================== */
 
     const icon =
         document.getElementById(
@@ -1402,7 +1287,7 @@ function showResult(
 async function analyzeItem() {
 
     console.log(
-        "The adaptive chat engine handles analysis automatically."
+        "The chat engine handles analysis automatically."
     );
 }
 
@@ -1414,13 +1299,12 @@ async function analyzeItem() {
 function newItem() {
 
     selectedCategory = "";
+
     selectedRole = "";
 
     uploadedImage = null;
-    imageDataUrl = "";
 
     itemType = "";
-    itemIdentificationConfidence = 0;
 
     conversation = [];
 
@@ -1432,7 +1316,9 @@ function newItem() {
             "imageInput"
         );
 
+
     if (input) {
+
         input.value = "";
     }
 
@@ -1441,6 +1327,7 @@ function newItem() {
         document.getElementById(
             "imagePreview"
         );
+
 
     if (preview) {
 
@@ -1457,7 +1344,9 @@ function newItem() {
             "uploadContent"
         );
 
+
     if (content) {
+
         content.classList.remove(
             "hidden"
         );
@@ -1469,8 +1358,11 @@ function newItem() {
             "imageContinue"
         );
 
+
     if (imageButton) {
-        imageButton.disabled = true;
+
+        imageButton.disabled =
+            true;
     }
 
 
@@ -1492,8 +1384,11 @@ function newItem() {
             "categoryContinue"
         );
 
+
     if (categoryButton) {
-        categoryButton.disabled = true;
+
+        categoryButton.disabled =
+            true;
     }
 
 
@@ -1502,7 +1397,9 @@ function newItem() {
             "roles"
         );
 
+
     if (roles) {
+
         roles.innerHTML = "";
     }
 
@@ -1512,8 +1409,11 @@ function newItem() {
             "roleContinue"
         );
 
+
     if (roleButton) {
-        roleButton.disabled = true;
+
+        roleButton.disabled =
+            true;
     }
 
 
@@ -1522,7 +1422,9 @@ function newItem() {
             "chatWindow"
         );
 
+
     if (chatWindow) {
+
         chatWindow.innerHTML = "";
     }
 
@@ -1531,6 +1433,7 @@ function newItem() {
         document.getElementById(
             "chatInput"
         );
+
 
     if (chatInput) {
 
@@ -1546,6 +1449,7 @@ function newItem() {
             "itemConfirmationText"
         );
 
+
     if (confirmation) {
 
         confirmation.textContent =
@@ -1557,6 +1461,7 @@ function newItem() {
         document.getElementById(
             "recommendation"
         );
+
 
     if (recommendation) {
 
@@ -1570,6 +1475,7 @@ function newItem() {
             "confidence"
         );
 
+
     if (confidence) {
 
         confidence.textContent =
@@ -1582,6 +1488,7 @@ function newItem() {
             "reasoningText"
         );
 
+
     if (reasoning) {
 
         reasoning.textContent =
@@ -1593,6 +1500,7 @@ function newItem() {
         document.getElementById(
             "reflectionText"
         );
+
 
     if (reflection) {
 
