@@ -1,5 +1,6 @@
 /* =========================================================
-   DECLUTTER.AI — CHAT ENGINE
+   DECLUTTER.AI — SMART CHAT ENGINE
+   Version 4.0
 ========================================================= */
 
 
@@ -57,7 +58,7 @@ function startApp() {
 function previewImage(event) {
 
     const file =
-        event.target.files[0];
+        event.target.files?.[0];
 
     if (!file) {
         return;
@@ -65,47 +66,31 @@ function previewImage(event) {
 
     uploadedImage = file;
 
-
     const preview =
-        document.getElementById(
-            "imagePreview"
-        );
+        document.getElementById("imagePreview");
 
     const content =
-        document.getElementById(
-            "uploadContent"
-        );
-
+        document.getElementById("uploadContent");
 
     if (preview) {
 
         preview.src =
             URL.createObjectURL(file);
 
-        preview.classList.remove(
-            "hidden"
-        );
+        preview.classList.remove("hidden");
     }
-
 
     if (content) {
 
-        content.classList.add(
-            "hidden"
-        );
+        content.classList.add("hidden");
     }
 
-
     const button =
-        document.getElementById(
-            "imageContinue"
-        );
-
+        document.getElementById("imageContinue");
 
     if (button) {
 
-        button.disabled =
-            false;
+        button.disabled = false;
     }
 }
 
@@ -120,38 +105,32 @@ function showStep(step) {
         .querySelectorAll(".app-step")
         .forEach(section => {
 
-            section.classList.add(
-                "hidden"
-            );
+            section.classList.add("hidden");
 
         });
-
 
     const target =
         document.getElementById(
             `step${step}`
         );
 
-
     if (target) {
 
-        target.classList.remove(
-            "hidden"
-        );
+        target.classList.remove("hidden");
     }
 
-
     const progress =
-        document.getElementById(
-            "progress"
-        );
-
+        document.getElementById("progress");
 
     if (progress) {
 
+        /*
+           5 steps total.
+        */
+
         const percentage =
             Math.min(
-                step * 25,
+                ((step - 1) / 4) * 100,
                 100
             );
 
@@ -159,19 +138,14 @@ function showStep(step) {
             `${percentage}%`;
     }
 
-
     const label =
-        document.getElementById(
-            "step-label"
-        );
-
+        document.getElementById("step-label");
 
     if (label) {
 
         label.textContent =
-            `Step ${step} of 4`;
+            `Step ${step} of 5`;
     }
-
 
     window.scrollTo({
         top: 0,
@@ -211,21 +185,17 @@ function selectCategory(
 
         });
 
-
     button.classList.add(
         "selected"
     );
 
-
     selectedCategory =
         category;
-
 
     const continueButton =
         document.getElementById(
             "categoryContinue"
         );
-
 
     if (continueButton) {
 
@@ -309,10 +279,7 @@ const rolesByCategory = {
 function generateRoles() {
 
     const container =
-        document.getElementById(
-            "roles"
-        );
-
+        document.getElementById("roles");
 
     if (!container) {
 
@@ -323,15 +290,12 @@ function generateRoles() {
         return;
     }
 
-
     container.innerHTML = "";
-
 
     const roles =
         rolesByCategory[
             selectedCategory
         ];
-
 
     if (!roles) {
 
@@ -343,26 +307,18 @@ function generateRoles() {
         return;
     }
 
-
     roles.forEach(role => {
 
         const button =
-            document.createElement(
-                "button"
-            );
+            document.createElement("button");
 
-
-        button.type =
-            "button";
-
+        button.type = "button";
 
         button.textContent =
             role;
 
-
         button.className =
             "role-button";
-
 
         button.onclick = () => {
 
@@ -373,13 +329,11 @@ function generateRoles() {
 
         };
 
-
         container.appendChild(
             button
         );
 
     });
-
 
     showStep(3);
 }
@@ -406,21 +360,17 @@ function selectRole(
 
         });
 
-
     button.classList.add(
         "selected"
     );
 
-
     selectedRole =
         role;
-
 
     const continueButton =
         document.getElementById(
             "roleContinue"
         );
-
 
     if (continueButton) {
 
@@ -431,7 +381,7 @@ function selectRole(
 
 
 /* =========================================================
-   START CHAT
+   START AI CHAT
 ========================================================= */
 
 async function generateQuestions() {
@@ -445,7 +395,6 @@ async function generateQuestions() {
         return;
     }
 
-
     if (!selectedRole) {
 
         alert(
@@ -455,29 +404,24 @@ async function generateQuestions() {
         return;
     }
 
-
     conversation = [];
 
     itemType = "";
-
 
     const chatWindow =
         document.getElementById(
             "chatWindow"
         );
 
-
     if (chatWindow) {
 
         chatWindow.innerHTML = "";
     }
 
-
     const confirmation =
         document.getElementById(
             "itemConfirmationText"
         );
-
 
     if (confirmation) {
 
@@ -485,9 +429,7 @@ async function generateQuestions() {
             `${selectedCategory} · ${selectedRole}`;
     }
 
-
     showStep(4);
-
 
     await askAI();
 }
@@ -503,12 +445,9 @@ async function askAI() {
         return;
     }
 
-
     chatBusy = true;
 
-
     addTypingMessage();
-
 
     try {
 
@@ -541,7 +480,6 @@ async function askAI() {
                             conversation
 
                     })
-
                 }
             );
 
@@ -587,6 +525,12 @@ async function askAI() {
         }
 
 
+        console.log(
+            "RAW AI RESPONSE:",
+            aiContent
+        );
+
+
         const parsed =
             parseAIResponse(
                 aiContent
@@ -595,6 +539,11 @@ async function askAI() {
 
         if (!parsed) {
 
+            console.error(
+                "Could not parse AI response:",
+                aiContent
+            );
+
             throw new Error(
                 "Could not understand AI response."
             );
@@ -602,7 +551,7 @@ async function askAI() {
 
 
         /* =====================================
-           AI QUESTION
+           QUESTION
         ===================================== */
 
         if (
@@ -610,28 +559,33 @@ async function askAI() {
             "question"
         ) {
 
-            addChatMessage(
-                "ai",
-                parsed.question
-            );
+            if (
+                parsed.question &&
+                parsed.question.trim()
+            ) {
 
-
-            conversation.push({
-
-                role: "assistant",
-
-                content:
+                addChatMessage(
+                    "ai",
                     parsed.question
+                );
 
-            });
+                conversation.push({
 
+                    role:
+                        "assistant",
+
+                    content:
+                        parsed.question
+
+                });
+            }
 
             return;
         }
 
 
         /* =====================================
-           AI RESULT
+           RESULT
         ===================================== */
 
         if (
@@ -641,7 +595,8 @@ async function askAI() {
 
             conversation.push({
 
-                role: "assistant",
+                role:
+                    "assistant",
 
                 content:
                     JSON.stringify(
@@ -650,11 +605,49 @@ async function askAI() {
 
             });
 
-
             showResult(
                 parsed
             );
 
+            return;
+        }
+
+
+        /*
+           Some models may accidentally omit
+           "type". Try to recognize the object.
+        */
+
+        if (
+            parsed.question
+        ) {
+
+            addChatMessage(
+                "ai",
+                parsed.question
+            );
+
+            conversation.push({
+
+                role:
+                    "assistant",
+
+                content:
+                    parsed.question
+
+            });
+
+            return;
+        }
+
+
+        if (
+            parsed.recommendation
+        ) {
+
+            showResult(
+                parsed
+            );
 
             return;
         }
@@ -669,12 +662,10 @@ async function askAI() {
 
         removeTypingMessage();
 
-
         console.error(
             "Declutter AI error:",
             error
         );
-
 
         addChatMessage(
             "ai",
@@ -691,25 +682,33 @@ async function askAI() {
 
 
 /* =========================================================
-   PARSE AI RESPONSE
+   ROBUST AI RESPONSE PARSER
 ========================================================= */
 
-function parseAIResponse(
-    content
-) {
+function parseAIResponse(content) {
+
+    if (!content) {
+        return null;
+    }
+
 
     let cleaned =
-        content.trim();
+        String(content)
+            .trim();
 
 
     /*
-       Remove markdown code blocks.
+       Remove markdown code fences.
     */
 
     cleaned =
         cleaned
             .replace(
                 /```json/gi,
+                ""
+            )
+            .replace(
+                /```javascript/gi,
                 ""
             )
             .replace(
@@ -720,8 +719,21 @@ function parseAIResponse(
 
 
     /*
-       Try direct JSON.
+       Remove common prefixes.
     */
+
+    cleaned =
+        cleaned
+            .replace(
+                /^json\s*/i,
+                ""
+            )
+            .trim();
+
+
+    /* =====================================================
+       1. DIRECT JSON
+    ===================================================== */
 
     try {
 
@@ -734,18 +746,15 @@ function parseAIResponse(
         console.warn(
             "Direct JSON parsing failed."
         );
-
     }
 
 
-    /*
-       Try extracting JSON
-       from surrounding text.
-    */
+    /* =====================================================
+       2. FIND OBJECT
+    ===================================================== */
 
     const firstBrace =
         cleaned.indexOf("{");
-
 
     const lastBrace =
         cleaned.lastIndexOf("}");
@@ -772,15 +781,107 @@ function parseAIResponse(
 
         } catch (error) {
 
-            console.error(
-                "JSON extraction failed:",
-                error
+            console.warn(
+                "JSON object extraction failed."
             );
-
         }
-
     }
 
+
+    /* =====================================================
+       3. FIND QUESTION MANUALLY
+    ===================================================== */
+
+    const questionMatch =
+        cleaned.match(
+            /"question"\s*:\s*"([\s\S]*?)"\s*[,}]/i
+        );
+
+
+    if (questionMatch) {
+
+        return {
+
+            type:
+                "question",
+
+            question:
+                questionMatch[1]
+                    .replace(
+                        /\\"/g,
+                        '"'
+                    )
+                    .replace(
+                        /\\n/g,
+                        " "
+                    )
+
+        };
+    }
+
+
+    /* =====================================================
+       4. FIND RESULT MANUALLY
+    ===================================================== */
+
+    const recommendationMatch =
+        cleaned.match(
+            /"recommendation"\s*:\s*"([^"]+)"/i
+        );
+
+
+    if (recommendationMatch) {
+
+        const confidenceMatch =
+            cleaned.match(
+                /"confidence"\s*:\s*(\d+(?:\.\d+)?)/i
+            );
+
+
+        const reasoningMatch =
+            cleaned.match(
+                /"reasoning"\s*:\s*"([\s\S]*?)"\s*[,}]/i
+            );
+
+
+        const reflectionMatch =
+            cleaned.match(
+                /"reflection"\s*:\s*"([\s\S]*?)"\s*[,}]/i
+            );
+
+
+        return {
+
+            type:
+                "result",
+
+            recommendation:
+                recommendationMatch[1],
+
+            confidence:
+                confidenceMatch
+                    ? Number(
+                        confidenceMatch[1]
+                    )
+                    : 50,
+
+            reasoning:
+                reasoningMatch
+                    ? reasoningMatch[1]
+                    : "",
+
+            reflection:
+                reflectionMatch
+                    ? reflectionMatch[1]
+                    : ""
+
+        };
+    }
+
+
+    /*
+       Nothing worked.
+    */
 
     return null;
 }
@@ -817,9 +918,9 @@ async function sendChatMessage() {
     }
 
 
-    /*
-       Display user's message.
-    */
+    /* =====================================
+       DISPLAY USER MESSAGE
+    ===================================== */
 
     addChatMessage(
         "user",
@@ -827,32 +928,35 @@ async function sendChatMessage() {
     );
 
 
-    /*
-       Add it to conversation.
-    */
+    /* =====================================
+       ADD TO CONVERSATION
+    ===================================== */
 
     conversation.push({
 
-        role: "user",
+        role:
+            "user",
 
-        content: text
+        content:
+            text
 
     });
 
 
-    /*
-       Clear input.
-    */
+    /* =====================================
+       CLEAR INPUT
+    ===================================== */
 
     input.value = "";
 
-
     autoResizeInput();
 
+    updateChatButton();
 
-    /*
-       Ask AI for next step.
-    */
+
+    /* =====================================
+       ASK AI
+    ===================================== */
 
     await askAI();
 }
@@ -889,7 +993,7 @@ function addChatMessage(
 
 
     message.textContent =
-        text;
+        String(text);
 
 
     chatWindow.appendChild(
@@ -1102,11 +1206,6 @@ document.addEventListener(
             "keydown",
             event => {
 
-                /*
-                   Enter = send
-                   Shift + Enter = new line
-                */
-
                 if (
                     event.key ===
                     "Enter" &&
@@ -1133,9 +1232,7 @@ document.addEventListener(
    SHOW RESULT
 ========================================================= */
 
-function showResult(
-    result
-) {
+function showResult(result) {
 
     const recommendation =
         document.getElementById(
@@ -1161,9 +1258,9 @@ function showResult(
         );
 
 
-    /*
-       Recommendation
-    */
+    /* =====================================
+       RECOMMENDATION
+    ===================================== */
 
     if (recommendation) {
 
@@ -1180,16 +1277,32 @@ function showResult(
     }
 
 
-    /*
-       Confidence
-    */
+    /* =====================================
+       CONFIDENCE
+    ===================================== */
 
     if (confidence) {
 
-        const value =
-            Math.round(
-                Number(
-                    result.confidence
+        let value =
+            Number(
+                result.confidence
+            );
+
+
+        if (
+            !Number.isFinite(value)
+        ) {
+
+            value = 50;
+        }
+
+
+        value =
+            Math.max(
+                0,
+                Math.min(
+                    100,
+                    Math.round(value)
                 )
             );
 
@@ -1199,9 +1312,9 @@ function showResult(
     }
 
 
-    /*
-       Reasoning
-    */
+    /* =====================================
+       REASONING
+    ===================================== */
 
     if (reasoning) {
 
@@ -1211,9 +1324,9 @@ function showResult(
     }
 
 
-    /*
-       Reflection
-    */
+    /* =====================================
+       REFLECTION
+    ===================================== */
 
     if (reflection) {
 
@@ -1223,9 +1336,9 @@ function showResult(
     }
 
 
-    /*
-       Result icon
-    */
+    /* =====================================
+       ICON
+    ===================================== */
 
     const icon =
         document.getElementById(
@@ -1244,15 +1357,26 @@ function showResult(
 
         const icons = {
 
-            KEEP: "♡",
+            KEEP:
+                "♡",
 
-            SELL: "↗",
+            SELL:
+                "↗",
 
-            DONATE: "♡",
+            DONATE:
+                "♡",
 
-            DISCARD: "×",
+            DISCARD:
+                "×",
 
-            RECYCLE: "↻"
+            RECYCLE:
+                "↻",
+
+            STORE:
+                "□",
+
+            UNCERTAIN:
+                "✦"
 
         };
 
@@ -1275,15 +1399,12 @@ function showResult(
 async function analyzeItem() {
 
     /*
-       Kept so old HTML references
-       do not cause errors.
-
-       The new app does not use this
-       button anymore.
+       Kept for compatibility with
+       old HTML.
     */
 
     console.log(
-        "The new chat engine handles analysis automatically."
+        "The chat engine handles analysis automatically."
     );
 }
 
@@ -1307,9 +1428,9 @@ function newItem() {
     chatBusy = false;
 
 
-    /*
-       Reset file input.
-    */
+    /* =====================================
+       FILE INPUT
+    ===================================== */
 
     const input =
         document.getElementById(
@@ -1323,9 +1444,9 @@ function newItem() {
     }
 
 
-    /*
-       Reset image preview.
-    */
+    /* =====================================
+       IMAGE PREVIEW
+    ===================================== */
 
     const preview =
         document.getElementById(
@@ -1343,9 +1464,9 @@ function newItem() {
     }
 
 
-    /*
-       Restore upload content.
-    */
+    /* =====================================
+       UPLOAD CONTENT
+    ===================================== */
 
     const content =
         document.getElementById(
@@ -1361,9 +1482,9 @@ function newItem() {
     }
 
 
-    /*
-       Reset image button.
-    */
+    /* =====================================
+       IMAGE BUTTON
+    ===================================== */
 
     const imageButton =
         document.getElementById(
@@ -1378,9 +1499,9 @@ function newItem() {
     }
 
 
-    /*
-       Reset category buttons.
-    */
+    /* =====================================
+       CATEGORY
+    ===================================== */
 
     document
         .querySelectorAll(
@@ -1395,10 +1516,6 @@ function newItem() {
         });
 
 
-    /*
-       Reset category button.
-    */
-
     const categoryButton =
         document.getElementById(
             "categoryContinue"
@@ -1412,9 +1529,9 @@ function newItem() {
     }
 
 
-    /*
-       Reset role container.
-    */
+    /* =====================================
+       ROLES
+    ===================================== */
 
     const roles =
         document.getElementById(
@@ -1427,10 +1544,6 @@ function newItem() {
         roles.innerHTML = "";
     }
 
-
-    /*
-       Reset role button.
-    */
 
     const roleButton =
         document.getElementById(
@@ -1445,9 +1558,9 @@ function newItem() {
     }
 
 
-    /*
-       Reset chat.
-    */
+    /* =====================================
+       CHAT
+    ===================================== */
 
     const chatWindow =
         document.getElementById(
@@ -1460,10 +1573,6 @@ function newItem() {
         chatWindow.innerHTML = "";
     }
 
-
-    /*
-       Reset chat input.
-    */
 
     const chatInput =
         document.getElementById(
@@ -1480,9 +1589,9 @@ function newItem() {
     }
 
 
-    /*
-       Reset item context.
-    */
+    /* =====================================
+       ITEM CONTEXT
+    ===================================== */
 
     const confirmation =
         document.getElementById(
@@ -1497,9 +1606,9 @@ function newItem() {
     }
 
 
-    /*
-       Reset result.
-    */
+    /* =====================================
+       RESULT
+    ===================================== */
 
     const recommendation =
         document.getElementById(
