@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -10,291 +8,38 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>
-        Declutter.AI — Decide what stays
-    </title>
+    <title>Declutter.AI — Decide what stays</title>
 
     <meta
         name="description"
         content="Declutter.AI helps you make smarter decisions about the things you own."
     >
 
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-    >
-
-    <link
-        rel="preconnect"
-        href="https://fonts.gstatic.com"
-        crossorigin
-    >
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet"
     >
 
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
-
-    <style>
-
-        /* =====================================================
-           CHAT
-        ===================================================== */
-
-        .chat-container {
-            width: 100%;
-            max-width: 760px;
-            margin: 0 auto;
-        }
-
-
-        .chat-window {
-
-            display: flex;
-            flex-direction: column;
-
-            gap: 18px;
-
-            min-height: 260px;
-            max-height: 520px;
-
-            overflow-y: auto;
-
-            padding: 24px;
-
-            margin-bottom: 18px;
-
-            border: 1px solid #e7e7e7;
-            border-radius: 22px;
-
-            background: #fafafa;
-        }
-
-
-        .chat-message {
-
-            display: flex;
-
-            max-width: 85%;
-
-            line-height: 1.55;
-
-            font-size: 15px;
-        }
-
-
-        .chat-message.ai {
-
-            align-self: flex-start;
-
-            background: white;
-
-            border: 1px solid #e5e5e5;
-
-            border-radius: 18px 18px 18px 5px;
-
-            padding: 14px 17px;
-        }
-
-
-        .chat-message.user {
-
-            align-self: flex-end;
-
-            background: #111;
-
-            color: white;
-
-            border-radius: 18px 18px 5px 18px;
-
-            padding: 14px 17px;
-        }
-
-
-        .chat-message.typing {
-
-            opacity: 0.55;
-
-            font-style: italic;
-        }
-
-
-        .chat-input-area {
-
-            display: flex;
-
-            gap: 10px;
-
-            width: 100%;
-        }
-
-
-        #chatInput {
-
-            flex: 1;
-
-            min-height: 52px;
-
-            resize: none;
-
-            padding: 15px 17px;
-
-            border: 1px solid #ddd;
-
-            border-radius: 16px;
-
-            font-family: inherit;
-
-            font-size: 15px;
-
-            outline: none;
-
-            background: white;
-        }
-
-
-        #chatInput:focus {
-
-            border-color: #111;
-        }
-
-
-        #chatSend {
-
-            min-width: 110px;
-
-            border: none;
-
-            border-radius: 16px;
-
-            background: #111;
-
-            color: white;
-
-            font-family: inherit;
-
-            font-weight: 600;
-
-            cursor: pointer;
-
-            transition: opacity 0.2s ease;
-        }
-
-
-        #chatSend:hover {
-
-            opacity: 0.8;
-        }
-
-
-        #chatSend:disabled {
-
-            opacity: 0.4;
-
-            cursor: not-allowed;
-        }
-
-
-        .chat-hint {
-
-            margin-top: 10px;
-
-            font-size: 12px;
-
-            color: #888;
-
-            text-align: center;
-        }
-
-
-        .item-confirmation {
-
-            margin-bottom: 20px;
-
-            padding: 16px 18px;
-
-            border-radius: 16px;
-
-            background: #f3f3f3;
-
-            font-size: 14px;
-
-            line-height: 1.5;
-        }
-
-
-        .item-confirmation strong {
-
-            display: block;
-
-            margin-bottom: 4px;
-
-            font-size: 13px;
-
-            text-transform: uppercase;
-
-            letter-spacing: 0.06em;
-        }
-
-
-        @media (max-width: 600px) {
-
-            .chat-window {
-
-                padding: 16px;
-
-                min-height: 240px;
-            }
-
-
-            .chat-message {
-
-                max-width: 92%;
-
-                font-size: 14px;
-            }
-
-
-            .chat-input-area {
-
-                flex-direction: column;
-            }
-
-
-            #chatSend {
-
-                min-height: 48px;
-            }
-
-        }
-
-    </style>
-
+    <link rel="stylesheet" href="style.css">
 </head>
-
 
 <body>
 
-
-<!-- =========================================================
+<!-- =====================================================
      NAVIGATION
-========================================================= -->
+===================================================== -->
 
 <header class="navbar">
 
-    <a
-        href="#"
-        class="logo"
-    >
+    <a href="#" class="logo">
         declutter<span>.ai</span>
     </a>
 
     <button
+        type="button"
         class="nav-button"
         onclick="startApp()"
     >
@@ -304,10 +49,9 @@
 </header>
 
 
-
-<!-- =========================================================
+<!-- =====================================================
      LANDING PAGE
-========================================================= -->
+===================================================== -->
 
 <main id="landing">
 
@@ -317,51 +61,36 @@
             ✦ AI-powered decision making
         </div>
 
-
         <h1>
             Decide what<br>
             <span>stays.</span>
         </h1>
 
-
         <p class="hero-description">
-
-            Your AI-powered decision assistant
-            for everything you own.
-
-            Upload an item, have a conversation
-            with AI, and get a personalized perspective.
-
+            Your AI-powered decision assistant for everything you own.
+            Upload an item, answer a few smart questions, and get a
+            personalized perspective.
         </p>
 
-
         <button
+            type="button"
             class="primary-button"
             onclick="startApp()"
         >
-
             Analyze an item
-
-            <span>
-                →
-            </span>
-
+            <span>→</span>
         </button>
 
-
         <p class="microcopy">
-
             Keep · Sell · Donate · Recycle · Discard
-
         </p>
 
     </section>
 
 
-
-    <!-- =====================================================
+    <!-- =================================================
          HOW IT WORKS
-    ====================================================== -->
+    ================================================== -->
 
     <section class="how-section">
 
@@ -380,7 +109,6 @@
 
 
         <div class="steps">
-
 
             <div class="step">
 
@@ -403,7 +131,6 @@
             </div>
 
 
-
             <div class="step">
 
                 <div class="step-number">
@@ -415,16 +142,15 @@
                 </div>
 
                 <h3>
-                    Talk to AI
+                    Tell us more
                 </h3>
 
                 <p>
-                    Have a short conversation
-                    tailored to your specific item.
+                    Have a natural conversation with AI
+                    about your specific item.
                 </p>
 
             </div>
-
 
 
             <div class="step">
@@ -442,12 +168,11 @@
                 </h3>
 
                 <p>
-                    Receive a thoughtful recommendation
+                    Receive a personalized perspective
                     and the reasoning behind it.
                 </p>
 
             </div>
-
 
         </div>
 
@@ -456,10 +181,9 @@
 </main>
 
 
-
-<!-- =========================================================
-     APP
-========================================================= -->
+<!-- =====================================================
+     APPLICATION
+===================================================== -->
 
 <main
     id="app"
@@ -467,9 +191,9 @@
 >
 
 
-    <!-- =====================================================
+    <!-- =================================================
          PROGRESS
-    ====================================================== -->
+    ================================================== -->
 
     <div class="progress-container">
 
@@ -480,16 +204,15 @@
         </div>
 
         <p id="step-label">
-            Step 1 of 5
+            Step 1 of 4
         </p>
 
     </div>
 
 
-
-    <!-- =====================================================
+    <!-- =================================================
          STEP 1 — IMAGE
-    ====================================================== -->
+    ================================================== -->
 
     <section
         id="step1"
@@ -507,12 +230,10 @@
             </h2>
 
             <p>
-                Upload a photo of something
-                you're unsure about.
+                Upload a photo of something you're unsure about.
             </p>
 
         </div>
-
 
 
         <label
@@ -539,8 +260,7 @@
                 </h3>
 
                 <p>
-                    Click to browse or drag
-                    your image here
+                    Click to browse or drag your image here
                 </p>
 
             </div>
@@ -555,25 +275,22 @@
         </label>
 
 
-
         <button
+            type="button"
             class="primary-button full"
-            onclick="nextStep(2)"
             id="imageContinue"
+            onclick="nextStep(2)"
             disabled
         >
-
             Continue →
-
         </button>
 
     </section>
 
 
-
-    <!-- =====================================================
+    <!-- =================================================
          STEP 2 — CATEGORY
-    ====================================================== -->
+    ================================================== -->
 
     <section
         id="step2"
@@ -591,122 +308,98 @@
             </h2>
 
             <p>
-                We'll use this to understand
-                the item's context.
+                Choose the category that best describes it.
             </p>
 
         </div>
 
 
-
         <div class="category-grid">
 
-
             <button
+                type="button"
                 onclick="selectCategory(this, 'Clothing')"
             >
-
                 👕
-
                 <span>
                     Clothing
                 </span>
-
             </button>
 
 
-
             <button
+                type="button"
                 onclick="selectCategory(this, 'Electronics')"
             >
-
                 💻
-
                 <span>
                     Electronics
                 </span>
-
             </button>
 
 
-
             <button
+                type="button"
                 onclick="selectCategory(this, 'Books')"
             >
-
                 📚
-
                 <span>
                     Books
                 </span>
-
             </button>
 
 
-
             <button
+                type="button"
                 onclick="selectCategory(this, 'Beauty')"
             >
-
                 🧴
-
                 <span>
                     Beauty
                 </span>
-
             </button>
 
 
-
             <button
+                type="button"
                 onclick="selectCategory(this, 'Home')"
             >
-
                 🏠
-
                 <span>
                     Home
                 </span>
-
             </button>
-
 
 
             <button
+                type="button"
                 onclick="selectCategory(this, 'Hobby')"
             >
-
                 🎨
-
                 <span>
                     Hobby
                 </span>
-
             </button>
-
 
         </div>
 
 
-
         <button
+            type="button"
             class="primary-button full"
-            onclick="generateRoles()"
             id="categoryContinue"
+            onclick="generateRoles()"
             disabled
         >
-
             Continue →
-
         </button>
 
     </section>
 
 
-
-    <!-- =====================================================
+    <!-- =================================================
          STEP 3 — ROLE
-    ====================================================== -->
+    ================================================== -->
 
     <section
         id="step3"
@@ -724,49 +417,42 @@
             </h2>
 
             <p>
-                This gives the AI a little context
-                before the conversation begins.
+                This helps AI understand why you own it
+                and what questions actually matter.
             </p>
 
         </div>
-
 
 
         <div
             id="roles"
             class="role-list"
         >
-
-            <!-- Roles generated by JavaScript -->
-
+            <!-- Generated by script.js -->
         </div>
 
 
-
         <button
+            type="button"
             class="primary-button full"
-            onclick="generateQuestions()"
             id="roleContinue"
+            onclick="generateQuestions()"
             disabled
         >
-
-            Start conversation →
-
+            Continue →
         </button>
 
     </section>
 
 
-
-    <!-- =====================================================
+    <!-- =================================================
          STEP 4 — AI CHAT
-    ====================================================== -->
+    ================================================== -->
 
     <section
         id="step4"
         class="app-step hidden"
     >
-
 
         <div class="app-heading">
 
@@ -775,94 +461,78 @@
             </p>
 
             <h2>
-                Let's talk about your item.
+                Let's figure this out.
             </h2>
 
             <p>
-                There are no right answers.
-                Just tell the AI what comes to mind.
+                AI will ask only the questions that matter
+                for your specific item.
             </p>
 
         </div>
-
 
 
         <!-- ITEM CONTEXT -->
 
-        <div
-            id="itemConfirmation"
-            class="item-confirmation"
-        >
+        <div class="item-confirmation">
 
-            <strong>
-                Your item
-            </strong>
-
-            <span id="itemConfirmationText">
-                Getting ready...
+            <span class="item-confirmation-label">
+                ANALYZING
             </span>
 
-        </div>
+            <strong id="itemConfirmationText">
+                Getting ready...
+            </strong>
 
+        </div>
 
 
         <!-- CHAT -->
 
-        <div class="chat-container">
+        <div
+            id="chatWindow"
+            class="chat-window"
+        >
+            <!-- AI and user messages appear here -->
+        </div>
 
 
-            <div
-                id="chatWindow"
-                class="chat-window"
+        <!-- INPUT -->
+
+        <div class="chat-input-wrapper">
+
+            <textarea
+                id="chatInput"
+                class="chat-input"
+                rows="1"
+                placeholder="Tell AI anything that might help..."
+                autocomplete="off"
+            ></textarea>
+
+
+            <button
+                type="button"
+                id="chatSend"
+                class="chat-send"
+                onclick="sendChatMessage()"
+                disabled
             >
-
-                <!-- Messages generated by JavaScript -->
-
-            </div>
-
-
-
-            <div class="chat-input-area">
-
-                <textarea
-                    id="chatInput"
-                    rows="1"
-                    placeholder="Type your answer..."
-                    autocomplete="off"
-                ></textarea>
-
-
-                <button
-                    id="chatSend"
-                    type="button"
-                    onclick="sendChatMessage()"
-                >
-
-                    Send →
-
-                </button>
-
-            </div>
-
-
-            <p class="chat-hint">
-
-                Be honest — the AI will adapt its questions
-                to what you tell it.
-
-            </p>
-
+                Send →
+            </button>
 
         </div>
 
 
+        <p class="chat-hint">
+            Press Enter to send · Shift + Enter for a new line
+        </p>
+
     </section>
 
 
-
-    <!-- =====================================================
+    <!-- =================================================
          STEP 5 — RESULT
-    ====================================================== -->
+    ================================================== -->
 
     <section
         id="step5"
@@ -871,15 +541,14 @@
 
         <div class="result-card">
 
-
             <p class="eyebrow">
                 YOUR PERSPECTIVE
             </p>
 
 
             <div
-                class="result-icon"
                 id="resultIcon"
+                class="result-icon"
             >
                 ✦
             </div>
@@ -895,6 +564,8 @@
             </h2>
 
 
+            <!-- CONFIDENCE -->
+
             <div class="confidence">
 
                 <span>
@@ -908,6 +579,7 @@
             </div>
 
 
+            <!-- REASONING -->
 
             <div class="reasoning">
 
@@ -915,11 +587,8 @@
                     Why?
                 </h3>
 
-
                 <p id="reasoningText">
-
                     Your reasoning will appear here.
-
                 </p>
 
 
@@ -931,45 +600,39 @@
             </div>
 
 
+            <!-- ACTIONS -->
 
             <div class="result-actions">
 
-
                 <button
+                    type="button"
                     onclick="newItem()"
                     class="secondary-button"
                 >
-
                     Analyze another
-
                 </button>
 
 
                 <button
+                    type="button"
                     onclick="saveItem()"
                     class="primary-button"
                 >
-
                     Save decision
-
                 </button>
 
-
             </div>
-
 
         </div>
 
     </section>
 
-
 </main>
 
 
-
-<!-- =========================================================
+<!-- =====================================================
      FOOTER
-========================================================= -->
+===================================================== -->
 
 <footer>
 
@@ -978,20 +641,17 @@
     </p>
 
     <small>
-        Making decisions about your things
-        a little easier.
+        Making decisions about your things a little easier.
     </small>
 
 </footer>
 
 
-
-<!-- =========================================================
+<!-- =====================================================
      SCRIPT
-========================================================= -->
+===================================================== -->
 
 <script src="script.js?v=4"></script>
 
 </body>
-
 </html>
