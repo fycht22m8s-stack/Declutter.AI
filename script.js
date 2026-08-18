@@ -1,5 +1,6 @@
 /* =========================================================
    DECLUTTER.AI — ADAPTIVE CHAT ENGINE
+   Full replacement script.js
 ========================================================= */
 
 
@@ -9,7 +10,6 @@
 
 let selectedCategory = "";
 let selectedRole = "";
-
 let uploadedImage = null;
 
 let itemType = "";
@@ -17,6 +17,12 @@ let itemType = "";
 let conversation = [];
 
 let chatBusy = false;
+
+let questionCount = 0;
+
+let lastAIQuestion = "";
+
+let identificationConfirmed = false;
 
 
 /* =========================================================
@@ -39,16 +45,13 @@ function startApp() {
     const app =
         document.getElementById("app");
 
-
     if (landing) {
         landing.classList.add("hidden");
     }
 
-
     if (app) {
         app.classList.remove("hidden");
     }
-
 
     showStep(1);
 }
@@ -61,51 +64,38 @@ function startApp() {
 function previewImage(event) {
 
     const file =
-        event.target.files?.[0];
-
+        event.target.files &&
+        event.target.files[0];
 
     if (!file) {
         return;
     }
 
-
     uploadedImage = file;
-
 
     const preview =
         document.getElementById(
             "imagePreview"
         );
 
-
     const content =
         document.getElementById(
             "uploadContent"
         );
 
-
     if (preview) {
 
-        if (
-            preview.src &&
-            preview.src.startsWith("blob:")
-        ) {
-
-            URL.revokeObjectURL(
-                preview.src
-            );
+        if (preview.src) {
+            URL.revokeObjectURL(preview.src);
         }
-
 
         preview.src =
             URL.createObjectURL(file);
-
 
         preview.classList.remove(
             "hidden"
         );
     }
-
 
     if (content) {
 
@@ -114,12 +104,10 @@ function previewImage(event) {
         );
     }
 
-
     const button =
         document.getElementById(
             "imageContinue"
         );
-
 
     if (button) {
 
@@ -130,7 +118,7 @@ function previewImage(event) {
 
 
 /* =========================================================
-   STEPS
+   STEP NAVIGATION
 ========================================================= */
 
 function showStep(step) {
@@ -145,12 +133,10 @@ function showStep(step) {
 
         });
 
-
     const target =
         document.getElementById(
             `step${step}`
         );
-
 
     if (target) {
 
@@ -159,39 +145,36 @@ function showStep(step) {
         );
     }
 
-
     const progress =
         document.getElementById(
             "progress"
         );
 
-
     if (progress) {
 
         const percentage =
             Math.min(
-                step * 25,
+                Math.max(
+                    (step - 1) * 25,
+                    0
+                ),
                 100
             );
-
 
         progress.style.width =
             `${percentage}%`;
     }
-
 
     const label =
         document.getElementById(
             "step-label"
         );
 
-
     if (label) {
 
         label.textContent =
             `Step ${step} of 4`;
     }
-
 
     window.scrollTo({
         top: 0,
@@ -231,21 +214,20 @@ function selectCategory(
 
         });
 
+    if (button) {
 
-    button.classList.add(
-        "selected"
-    );
-
+        button.classList.add(
+            "selected"
+        );
+    }
 
     selectedCategory =
         category;
-
 
     const continueButton =
         document.getElementById(
             "categoryContinue"
         );
-
 
     if (continueButton) {
 
@@ -328,11 +310,19 @@ const rolesByCategory = {
 
 function generateRoles() {
 
+    if (!selectedCategory) {
+
+        alert(
+            "Please choose a category first."
+        );
+
+        return;
+    }
+
     const container =
         document.getElementById(
             "roles"
         );
-
 
     if (!container) {
 
@@ -343,15 +333,12 @@ function generateRoles() {
         return;
     }
 
-
     container.innerHTML = "";
-
 
     const roles =
         rolesByCategory[
             selectedCategory
         ];
-
 
     if (!roles) {
 
@@ -363,6 +350,16 @@ function generateRoles() {
         return;
     }
 
+    selectedRole = "";
+
+    const roleContinue =
+        document.getElementById(
+            "roleContinue"
+        );
+
+    if (roleContinue) {
+        roleContinue.disabled = true;
+    }
 
     roles.forEach(role => {
 
@@ -371,18 +368,14 @@ function generateRoles() {
                 "button"
             );
 
-
         button.type =
             "button";
-
 
         button.textContent =
             role;
 
-
         button.className =
             "role-button";
-
 
         button.onclick = () => {
 
@@ -393,13 +386,11 @@ function generateRoles() {
 
         };
 
-
         container.appendChild(
             button
         );
 
     });
-
 
     showStep(3);
 }
@@ -426,21 +417,20 @@ function selectRole(
 
         });
 
+    if (button) {
 
-    button.classList.add(
-        "selected"
-    );
-
+        button.classList.add(
+            "selected"
+        );
+    }
 
     selectedRole =
         role;
-
 
     const continueButton =
         document.getElementById(
             "roleContinue"
         );
-
 
     if (continueButton) {
 
@@ -451,7 +441,7 @@ function selectRole(
 
 
 /* =========================================================
-   START ADAPTIVE CHAT
+   START CHAT
 ========================================================= */
 
 async function generateQuestions() {
@@ -465,7 +455,6 @@ async function generateQuestions() {
         return;
     }
 
-
     if (!selectedRole) {
 
         alert(
@@ -475,29 +464,30 @@ async function generateQuestions() {
         return;
     }
 
-
     conversation = [];
 
     itemType = "";
 
+    questionCount = 0;
+
+    lastAIQuestion = "";
+
+    identificationConfirmed = false;
 
     const chatWindow =
         document.getElementById(
             "chatWindow"
         );
 
-
     if (chatWindow) {
 
         chatWindow.innerHTML = "";
     }
 
-
     const confirmation =
         document.getElementById(
             "itemConfirmationText"
         );
-
 
     if (confirmation) {
 
@@ -505,17 +495,7 @@ async function generateQuestions() {
             `${selectedCategory} · ${selectedRole}`;
     }
 
-
     showStep(4);
-
-
-    /*
-       The AI starts the conversation.
-
-       Important:
-       At this stage the Worker should eventually
-       receive the uploaded image and identify it.
-    */
 
     await askAI();
 }
@@ -531,12 +511,11 @@ async function askAI() {
         return;
     }
 
-
     chatBusy = true;
 
+    updateChatButton();
 
     addTypingMessage();
-
 
     try {
 
@@ -569,13 +548,28 @@ async function askAI() {
                             conversation
 
                     })
-
                 }
             );
 
 
-        const data =
-            await response.json();
+        let data = null;
+
+        try {
+
+            data =
+                await response.json();
+
+        } catch (jsonError) {
+
+            console.error(
+                "Could not read API JSON:",
+                jsonError
+            );
+
+            throw new Error(
+                "The server returned an invalid response."
+            );
+        }
 
 
         removeTypingMessage();
@@ -588,8 +582,8 @@ async function askAI() {
                 data
             );
 
-
             throw new Error(
+                data?.error ||
                 "AI request failed."
             );
         }
@@ -609,7 +603,6 @@ async function askAI() {
                 "Empty AI response:",
                 data
             );
-
 
             throw new Error(
                 "AI returned no content."
@@ -631,6 +624,67 @@ async function askAI() {
 
         if (!parsed) {
 
+            /*
+               Last-resort fallback.
+
+               If the AI returned plain text,
+               treat it as a conversational
+               question instead of crashing.
+            */
+
+            const plainText =
+                extractPlainAIText(
+                    aiContent
+                );
+
+            if (
+                plainText &&
+                looksLikeQuestion(
+                    plainText
+                )
+            ) {
+
+                console.warn(
+                    "AI returned a plain question. Using it as a question."
+                );
+
+                handleAIQuestion(
+                    plainText
+                );
+
+                return;
+            }
+
+
+            /*
+               Try detecting a textual
+               recommendation.
+            */
+
+            const fallbackResult =
+                parseTextualRecommendation(
+                    plainText
+                );
+
+            if (fallbackResult) {
+
+                console.warn(
+                    "AI returned a textual recommendation. Converting it automatically."
+                );
+
+                showResult(
+                    fallbackResult
+                );
+
+                return;
+            }
+
+
+            console.error(
+                "Could not parse AI response:",
+                aiContent
+            );
+
             throw new Error(
                 "Could not understand AI response."
             );
@@ -638,7 +692,7 @@ async function askAI() {
 
 
         /* =====================================
-           QUESTION
+           AI QUESTION
         ===================================== */
 
         if (
@@ -646,93 +700,16 @@ async function askAI() {
             "question"
         ) {
 
-            const question =
-                String(
-                    parsed.question ||
-                    ""
-                ).trim();
-
-
-            if (!question) {
-
-                throw new Error(
-                    "AI question was empty."
-                );
-            }
-
-
-            addChatMessage(
-                "ai",
-                question
+            handleAIQuestion(
+                parsed.question
             );
-
-
-            conversation.push({
-
-                role: "assistant",
-
-                content:
-                    question
-
-            });
-
 
             return;
         }
 
 
         /* =====================================
-           ITEM IDENTIFICATION
-        ===================================== */
-
-        if (
-            parsed.type ===
-            "identification"
-        ) {
-
-            const detectedType =
-                String(
-                    parsed.itemType ||
-                    ""
-                ).trim();
-
-
-            if (
-                detectedType
-            ) {
-
-                itemType =
-                    detectedType;
-            }
-
-
-            const message =
-                parsed.question ||
-                `I think this is ${detectedType}. Is that correct?`;
-
-
-            addChatMessage(
-                "ai",
-                message
-            );
-
-
-            conversation.push({
-
-                role: "assistant",
-
-                content:
-                    message
-
-            });
-
-
-            return;
-        }
-
-
-        /* =====================================
-           RESULT
+           AI RESULT
         ===================================== */
 
         if (
@@ -751,18 +728,62 @@ async function askAI() {
 
             });
 
-
             showResult(
                 parsed
             );
 
+            return;
+        }
+
+
+        /*
+           Some models may return an object
+           without the "type" field.
+        */
+
+        if (
+            parsed.question
+        ) {
+
+            handleAIQuestion(
+                parsed.question
+            );
+
+            return;
+        }
+
+
+        if (
+            parsed.recommendation
+        ) {
+
+            showResult({
+
+                type: "result",
+
+                recommendation:
+                    parsed.recommendation,
+
+                confidence:
+                    parsed.confidence ||
+                    70,
+
+                reasoning:
+                    parsed.reasoning ||
+                    "Based on the information you provided.",
+
+                reflection:
+                    parsed.reflection ||
+                    ""
+
+            });
 
             return;
         }
 
 
         throw new Error(
-            "Unknown AI response type."
+            "Unknown AI response format."
         );
 
 
@@ -770,12 +791,10 @@ async function askAI() {
 
         removeTypingMessage();
 
-
         console.error(
             "Declutter AI error:",
             error
         );
-
 
         addChatMessage(
             "ai",
@@ -792,38 +811,109 @@ async function askAI() {
 
 
 /* =========================================================
+   HANDLE AI QUESTION
+========================================================= */
+
+function handleAIQuestion(
+    question
+) {
+
+    if (!question) {
+        return;
+    }
+
+    const cleanedQuestion =
+        String(question)
+            .trim();
+
+    if (!cleanedQuestion) {
+        return;
+    }
+
+
+    /*
+       Prevent exact duplicate questions.
+    */
+
+    if (
+        lastAIQuestion &&
+        normalizeText(
+            lastAIQuestion
+        ) ===
+        normalizeText(
+            cleanedQuestion
+        )
+    ) {
+
+        console.warn(
+            "Duplicate AI question ignored."
+        );
+
+        return;
+    }
+
+
+    lastAIQuestion =
+        cleanedQuestion;
+
+    questionCount++;
+
+
+    addChatMessage(
+        "ai",
+        cleanedQuestion
+    );
+
+
+    conversation.push({
+
+        role: "assistant",
+
+        content:
+            cleanedQuestion
+
+    });
+
+
+    updateChatButton();
+}
+
+
+/* =========================================================
    PARSE AI RESPONSE
 ========================================================= */
 
-function parseAIResponse(content) {
+function parseAIResponse(
+    content
+) {
 
-    if (!content) {
+    if (
+        content === null ||
+        content === undefined
+    ) {
+
         return null;
     }
 
 
     let cleaned =
-        String(content).trim();
+        String(content)
+            .trim();
 
 
-    console.log(
-        "RAW AI RESPONSE:",
-        cleaned
-    );
+    if (!cleaned) {
+        return null;
+    }
 
 
-    /* ==========================================
-       REMOVE MARKDOWN
-    ========================================== */
+    /*
+       Remove common markdown wrappers.
+    */
 
     cleaned =
         cleaned
             .replace(
                 /^```json\s*/i,
-                ""
-            )
-            .replace(
-                /^```javascript\s*/i,
                 ""
             )
             .replace(
@@ -837,41 +927,35 @@ function parseAIResponse(content) {
             .trim();
 
 
-    /* ==========================================
-       NORMALIZE QUOTES
-    ========================================== */
+    /*
+       Remove accidental "JSON:" prefix.
+    */
 
     cleaned =
-        cleaned
-            .replace(
-                /[“”]/g,
-                '"'
-            )
-            .replace(
-                /[‘’]/g,
-                "'"
-            );
+        cleaned.replace(
+            /^json\s*:/i,
+            ""
+        )
+        .trim();
 
 
-    /* ==========================================
-       1. DIRECT JSON
-    ========================================== */
+    /*
+       Direct JSON.
+    */
 
     try {
 
-        const parsed =
+        const direct =
             JSON.parse(
                 cleaned
             );
 
-
         if (
-            parsed &&
-            typeof parsed ===
-            "object"
+            direct &&
+            typeof direct === "object"
         ) {
 
-            return parsed;
+            return direct;
         }
 
     } catch (error) {
@@ -882,13 +966,13 @@ function parseAIResponse(content) {
     }
 
 
-    /* ==========================================
-       2. JSON INSIDE TEXT
-    ========================================== */
+    /*
+       Extract the first complete
+       JSON object from surrounding text.
+    */
 
     const firstBrace =
         cleaned.indexOf("{");
-
 
     const lastBrace =
         cleaned.lastIndexOf("}");
@@ -909,156 +993,356 @@ function parseAIResponse(content) {
 
         try {
 
-            const parsed =
+            const extracted =
                 JSON.parse(
                     jsonPart
                 );
 
-
             if (
-                parsed &&
-                typeof parsed ===
-                "object"
+                extracted &&
+                typeof extracted ===
+                    "object"
             ) {
 
-                return parsed;
+                return extracted;
             }
 
         } catch (error) {
 
-            console.warn(
-                "JSON extraction failed."
+            console.error(
+                "JSON extraction failed:",
+                error
             );
         }
     }
 
 
-    /* ==========================================
-       3. PLAIN QUESTION
-    ========================================== */
+    /*
+       Try repairing simple JSON
+       formatting mistakes.
+    */
 
-    const questionMark =
-        cleaned.indexOf("?");
+    try {
+
+        const repaired =
+            repairSimpleJSON(
+                cleaned
+            );
+
+        if (repaired) {
+            return repaired;
+        }
+
+    } catch (error) {
+
+        console.warn(
+            "JSON repair failed."
+        );
+    }
+
+
+    return null;
+}
+
+
+/* =========================================================
+   SIMPLE JSON REPAIR
+========================================================= */
+
+function repairSimpleJSON(
+    text
+) {
+
+    let candidate =
+        text.trim();
+
+
+    /*
+       Extract object again.
+    */
+
+    const start =
+        candidate.indexOf("{");
+
+    const end =
+        candidate.lastIndexOf("}");
 
 
     if (
-        questionMark !== -1
+        start === -1 ||
+        end === -1
     ) {
 
-        let question =
-            cleaned.substring(
-                0,
-                questionMark + 1
-            ).trim();
-
-
-        question =
-            question
-                .replace(
-                    /^question\s*:\s*/i,
-                    ""
-                )
-                .replace(
-                    /^q\s*:\s*/i,
-                    ""
-                )
-                .trim();
-
-
-        if (
-            question.length > 3
-        ) {
-
-            console.warn(
-                "AI returned plain question. Converting automatically."
-            );
-
-
-            return {
-
-                type: "question",
-
-                question:
-                    question
-
-            };
-        }
+        return null;
     }
 
 
-    /* ==========================================
-       4. QUESTION WITHOUT QUESTION MARK
-    ========================================== */
+    candidate =
+        candidate.substring(
+            start,
+            end + 1
+        );
+
+
+    /*
+       Remove trailing commas.
+    */
+
+    candidate =
+        candidate.replace(
+            /,\s*([}\]])/g,
+            "$1"
+        );
+
+
+    try {
+
+        return JSON.parse(
+            candidate
+        );
+
+    } catch (error) {
+
+        return null;
+    }
+}
+
+
+/* =========================================================
+   EXTRACT PLAIN AI TEXT
+========================================================= */
+
+function extractPlainAIText(
+    content
+) {
+
+    if (
+        content === null ||
+        content === undefined
+    ) {
+
+        return "";
+    }
+
+    let text =
+        String(content)
+            .trim();
+
+
+    text =
+        text
+            .replace(
+                /^```[\w-]*\s*/i,
+                ""
+            )
+            .replace(
+                /\s*```$/i,
+                ""
+            )
+            .trim();
+
+
+    return text;
+}
+
+
+/* =========================================================
+   QUESTION DETECTION
+========================================================= */
+
+function looksLikeQuestion(
+    text
+) {
+
+    if (!text) {
+        return false;
+    }
+
+    const value =
+        text.trim();
+
+
+    if (
+        value.endsWith("?")
+    ) {
+
+        return true;
+    }
+
+
+    const lower =
+        value.toLowerCase();
+
 
     const questionStarters = [
 
         "how ",
         "what ",
-        "why ",
         "when ",
         "where ",
+        "why ",
         "which ",
         "who ",
+        "is ",
+        "are ",
         "do ",
         "does ",
         "did ",
-        "is ",
-        "are ",
+        "have ",
+        "has ",
         "can ",
         "could ",
         "would ",
         "will ",
-        "have ",
-        "has "
+        "was ",
+        "were ",
+        "tell me ",
+        "how often ",
+        "how long ",
+        "how much ",
+        "how many "
 
     ];
 
 
+    return questionStarters.some(
+        starter =>
+            lower.startsWith(
+                starter
+            )
+    );
+}
+
+
+/* =========================================================
+   TEXTUAL RECOMMENDATION PARSER
+========================================================= */
+
+function parseTextualRecommendation(
+    text
+) {
+
+    if (!text) {
+        return null;
+    }
+
     const lower =
-        cleaned.toLowerCase();
+        text.toLowerCase();
 
 
-    const looksLikeQuestion =
-        questionStarters.some(
-            starter =>
-                lower.startsWith(
-                    starter
-                )
-        );
+    let recommendation =
+        null;
 
 
     if (
-        looksLikeQuestion &&
-        cleaned.length > 5
+        /\bkeep\b/.test(
+            lower
+        ) &&
+        !/\b(shouldn't|not|don't|do not)\s+keep\b/.test(
+            lower
+        )
     ) {
 
-        console.warn(
-            "AI returned a question without JSON. Converting automatically."
-        );
-
-
-        return {
-
-            type: "question",
-
-            question:
-                cleaned
-
-        };
+        recommendation =
+            "KEEP";
     }
 
 
-    /* ==========================================
-       5. NOTHING UNDERSTOOD
-    ========================================== */
+    if (
+        /\bsell\b/.test(
+            lower
+        )
+    ) {
 
-    console.error(
-        "Could not parse AI response:",
-        cleaned
-    );
+        recommendation =
+            "SELL";
+    }
 
 
-    return null;
+    if (
+        /\bdonate\b/.test(
+            lower
+        )
+    ) {
+
+        recommendation =
+            "DONATE";
+    }
+
+
+    if (
+        /\bdiscard\b/.test(
+            lower
+        ) ||
+        /\bthrow (it|this) away\b/.test(
+            lower
+        )
+    ) {
+
+        recommendation =
+            "DISCARD";
+    }
+
+
+    if (
+        /\brecycle\b/.test(
+            lower
+        ) ||
+        /\brecycling\b/.test(
+            lower
+        )
+    ) {
+
+        recommendation =
+            "RECYCLE";
+    }
+
+
+    if (!recommendation) {
+        return null;
+    }
+
+
+    let confidence =
+        70;
+
+
+    const percentage =
+        text.match(
+            /(\d{1,3})\s*%/
+        );
+
+
+    if (percentage) {
+
+        confidence =
+            Math.min(
+                100,
+                Math.max(
+                    0,
+                    Number(
+                        percentage[1]
+                    )
+                )
+            );
+    }
+
+
+    return {
+
+        type: "result",
+
+        recommendation,
+
+        confidence,
+
+        reasoning:
+            text,
+
+        reflection:
+            ""
+
+    };
 }
 
 
@@ -1093,9 +1377,9 @@ async function sendChatMessage() {
     }
 
 
-    /* =====================================
-       DISPLAY USER MESSAGE
-    ===================================== */
+    /*
+       Display user message.
+    */
 
     addChatMessage(
         "user",
@@ -1103,23 +1387,22 @@ async function sendChatMessage() {
     );
 
 
-    /* =====================================
-       SAVE TO CONVERSATION
-    ===================================== */
+    /*
+       Store user message.
+    */
 
     conversation.push({
 
         role: "user",
 
-        content:
-            text
+        content: text
 
     });
 
 
-    /* =====================================
-       CLEAR INPUT
-    ===================================== */
+    /*
+       Clear input.
+    */
 
     input.value = "";
 
@@ -1128,9 +1411,9 @@ async function sendChatMessage() {
     updateChatButton();
 
 
-    /* =====================================
-       ASK AI
-    ===================================== */
+    /*
+       Ask AI.
+    */
 
     await askAI();
 }
@@ -1152,6 +1435,20 @@ function addChatMessage(
 
 
     if (!chatWindow) {
+
+        console.warn(
+            "Missing #chatWindow element."
+        );
+
+        return;
+    }
+
+
+    if (
+        text === null ||
+        text === undefined
+    ) {
+
         return;
     }
 
@@ -1167,7 +1464,7 @@ function addChatMessage(
 
 
     message.textContent =
-        text;
+        String(text);
 
 
     chatWindow.appendChild(
@@ -1346,7 +1643,27 @@ function autoResizeInput() {
 
 
 /* =========================================================
-   KEYBOARD
+   TEXT NORMALIZATION
+========================================================= */
+
+function normalizeText(
+    text
+) {
+
+    return String(
+        text || ""
+    )
+        .toLowerCase()
+        .replace(
+            /\s+/g,
+            " "
+        )
+        .trim();
+}
+
+
+/* =========================================================
+   KEYBOARD / INPUT EVENTS
 ========================================================= */
 
 document.addEventListener(
@@ -1380,8 +1697,14 @@ document.addEventListener(
             "keydown",
             event => {
 
+                /*
+                   Enter = send
+                   Shift + Enter = newline
+                */
+
                 if (
-                    event.key === "Enter" &&
+                    event.key ===
+                    "Enter" &&
                     !event.shiftKey
                 ) {
 
@@ -1409,6 +1732,11 @@ function showResult(
     result
 ) {
 
+    if (!result) {
+        return;
+    }
+
+
     const recommendation =
         document.getElementById(
             "recommendation"
@@ -1433,71 +1761,113 @@ function showResult(
         );
 
 
-    /* =====================================
-       RECOMMENDATION
-    ===================================== */
+    /*
+       Recommendation
+    */
+
+    let recommendationValue =
+        String(
+            result.recommendation ||
+            "UNCERTAIN"
+        )
+            .trim()
+            .toUpperCase();
+
+
+    recommendationValue =
+        recommendationValue.replace(
+            /[\s-]+/g,
+            "_"
+        );
+
+
+    const validRecommendations = [
+
+        "KEEP",
+        "SELL",
+        "DONATE",
+        "DISCARD",
+        "RECYCLE"
+
+    ];
+
+
+    if (
+        !validRecommendations.includes(
+            recommendationValue
+        )
+    ) {
+
+        recommendationValue =
+            "UNCERTAIN";
+    }
+
 
     if (recommendation) {
 
         recommendation.textContent =
-            String(
-                result.recommendation ||
-                "UNCERTAIN"
-            )
+            recommendationValue
                 .replace(
                     /_/g,
                     " "
-                )
-                .toUpperCase();
+                );
     }
 
 
-    /* =====================================
-       CONFIDENCE
-    ===================================== */
+    /*
+       Confidence
+    */
 
     if (confidence) {
 
-        const numericConfidence =
+        let value =
             Number(
                 result.confidence
             );
 
 
         if (
-            Number.isFinite(
-                numericConfidence
+            !Number.isFinite(
+                value
             )
         ) {
 
-            confidence.textContent =
-                `${Math.round(
-                    numericConfidence
-                )}% confidence`;
-
-        } else {
-
-            confidence.textContent =
-                "Moderate confidence";
+            value = 70;
         }
+
+
+        value =
+            Math.round(
+                Math.min(
+                    100,
+                    Math.max(
+                        0,
+                        value
+                    )
+                )
+            );
+
+
+        confidence.textContent =
+            `${value}% confidence`;
     }
 
 
-    /* =====================================
-       REASONING
-    ===================================== */
+    /*
+       Reasoning
+    */
 
     if (reasoning) {
 
         reasoning.textContent =
             result.reasoning ||
-            "";
+            "Based on the information you provided.";
     }
 
 
-    /* =====================================
-       REFLECTION
-    ===================================== */
+    /*
+       Reflection
+    */
 
     if (reflection) {
 
@@ -1507,9 +1877,9 @@ function showResult(
     }
 
 
-    /* =====================================
-       RESULT ICON
-    ===================================== */
+    /*
+       Result icon
+    */
 
     const icon =
         document.getElementById(
@@ -1518,13 +1888,6 @@ function showResult(
 
 
     if (icon) {
-
-        const recommendationValue =
-            String(
-                result.recommendation ||
-                ""
-            ).toUpperCase();
-
 
         const icons = {
 
@@ -1536,7 +1899,9 @@ function showResult(
 
             DISCARD: "×",
 
-            RECYCLE: "↻"
+            RECYCLE: "↻",
+
+            UNCERTAIN: "✦"
 
         };
 
@@ -1548,6 +1913,37 @@ function showResult(
     }
 
 
+    /*
+       Save the final AI result
+       in conversation.
+    */
+
+    conversation.push({
+
+        role: "assistant",
+
+        content:
+            JSON.stringify({
+
+                type: "result",
+
+                recommendation:
+                    recommendationValue,
+
+                confidence:
+                    result.confidence,
+
+                reasoning:
+                    result.reasoning,
+
+                reflection:
+                    result.reflection
+
+            })
+
+    });
+
+
     showStep(5);
 }
 
@@ -1557,6 +1953,24 @@ function showResult(
 ========================================================= */
 
 async function analyzeItem() {
+
+    /*
+       The new adaptive chat handles
+       analysis automatically.
+
+       Kept here so old HTML does not
+       throw an error.
+    */
+
+    if (
+        conversation.length === 0
+    ) {
+
+        await askAI();
+
+        return;
+    }
+
 
     console.log(
         "The adaptive chat engine handles analysis automatically."
@@ -1582,10 +1996,16 @@ function newItem() {
 
     chatBusy = false;
 
+    questionCount = 0;
 
-    /* =====================================
-       FILE INPUT
-    ===================================== */
+    lastAIQuestion = "";
+
+    identificationConfirmed = false;
+
+
+    /*
+       Reset file input.
+    */
 
     const input =
         document.getElementById(
@@ -1599,9 +2019,9 @@ function newItem() {
     }
 
 
-    /* =====================================
-       IMAGE PREVIEW
-    ===================================== */
+    /*
+       Reset image preview.
+    */
 
     const preview =
         document.getElementById(
@@ -1613,12 +2033,23 @@ function newItem() {
 
         if (
             preview.src &&
-            preview.src.startsWith("blob:")
+            preview.src.startsWith(
+                "blob:"
+            )
         ) {
 
-            URL.revokeObjectURL(
-                preview.src
-            );
+            try {
+
+                URL.revokeObjectURL(
+                    preview.src
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "Could not revoke image URL."
+                );
+            }
         }
 
 
@@ -1630,9 +2061,9 @@ function newItem() {
     }
 
 
-    /* =====================================
-       UPLOAD CONTENT
-    ===================================== */
+    /*
+       Restore upload content.
+    */
 
     const content =
         document.getElementById(
@@ -1648,9 +2079,9 @@ function newItem() {
     }
 
 
-    /* =====================================
-       IMAGE BUTTON
-    ===================================== */
+    /*
+       Reset image button.
+    */
 
     const imageButton =
         document.getElementById(
@@ -1665,9 +2096,9 @@ function newItem() {
     }
 
 
-    /* =====================================
-       CATEGORY
-    ===================================== */
+    /*
+       Reset category buttons.
+    */
 
     document
         .querySelectorAll(
@@ -1682,6 +2113,10 @@ function newItem() {
         });
 
 
+    /*
+       Reset category button.
+    */
+
     const categoryButton =
         document.getElementById(
             "categoryContinue"
@@ -1695,9 +2130,9 @@ function newItem() {
     }
 
 
-    /* =====================================
-       ROLES
-    ===================================== */
+    /*
+       Reset roles.
+    */
 
     const roles =
         document.getElementById(
@@ -1710,6 +2145,10 @@ function newItem() {
         roles.innerHTML = "";
     }
 
+
+    /*
+       Reset role button.
+    */
 
     const roleButton =
         document.getElementById(
@@ -1724,9 +2163,9 @@ function newItem() {
     }
 
 
-    /* =====================================
-       CHAT
-    ===================================== */
+    /*
+       Reset chat.
+    */
 
     const chatWindow =
         document.getElementById(
@@ -1739,6 +2178,10 @@ function newItem() {
         chatWindow.innerHTML = "";
     }
 
+
+    /*
+       Reset chat input.
+    */
 
     const chatInput =
         document.getElementById(
@@ -1755,9 +2198,9 @@ function newItem() {
     }
 
 
-    /* =====================================
-       ITEM CONTEXT
-    ===================================== */
+    /*
+       Reset item context.
+    */
 
     const confirmation =
         document.getElementById(
@@ -1772,9 +2215,9 @@ function newItem() {
     }
 
 
-    /* =====================================
-       RESULT
-    ===================================== */
+    /*
+       Reset result.
+    */
 
     const recommendation =
         document.getElementById(
@@ -1828,6 +2271,21 @@ function newItem() {
     }
 
 
+    const resultIcon =
+        document.getElementById(
+            "resultIcon"
+        );
+
+
+    if (resultIcon) {
+
+        resultIcon.textContent =
+            "✦";
+    }
+
+
+    updateChatButton();
+
     showStep(1);
 }
 
@@ -1842,3 +2300,38 @@ function saveItem() {
         "Saving items will be available in a future version."
     );
 }
+
+
+/* =========================================================
+   OPTIONAL DEBUG HELPER
+========================================================= */
+
+window.DeclutterAI = {
+
+    getState() {
+
+        return {
+
+            selectedCategory,
+
+            selectedRole,
+
+            itemType,
+
+            questionCount,
+
+            conversation,
+
+            chatBusy
+
+        };
+
+    },
+
+    reset() {
+
+        newItem();
+
+    }
+
+};
