@@ -1,17 +1,242 @@
-let selectedCategory = "";
-let selectedRole = "";
-let uploadedImage = null;
-let currentQuestions = [];
-
-
 /* =========================================================
-   DECLUTTER.AI — QUESTION ENGINE
-   AI-FIRST + LOCAL FALLBACK
+   DECLUTTER.AI — CHAT ENGINE
 ========================================================= */
 
 
 /* =========================================================
-   CATEGORY → ROLE
+   GLOBAL STATE
+========================================================= */
+
+let selectedCategory = "";
+let selectedRole = "";
+let uploadedImage = null;
+
+let itemType = "";
+
+let conversation = [];
+
+let chatBusy = false;
+
+
+/* =========================================================
+   API
+========================================================= */
+
+const API_URL =
+    "https://declutter-ai-api.plewko-olga.workers.dev/";
+
+
+/* =========================================================
+   START APP
+========================================================= */
+
+function startApp() {
+
+    const landing =
+        document.getElementById("landing");
+
+    const app =
+        document.getElementById("app");
+
+    if (landing) {
+        landing.classList.add("hidden");
+    }
+
+    if (app) {
+        app.classList.remove("hidden");
+    }
+
+    showStep(1);
+}
+
+
+/* =========================================================
+   IMAGE PREVIEW
+========================================================= */
+
+function previewImage(event) {
+
+    const file =
+        event.target.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    uploadedImage = file;
+
+
+    const preview =
+        document.getElementById(
+            "imagePreview"
+        );
+
+    const content =
+        document.getElementById(
+            "uploadContent"
+        );
+
+
+    if (preview) {
+
+        preview.src =
+            URL.createObjectURL(file);
+
+        preview.classList.remove(
+            "hidden"
+        );
+    }
+
+
+    if (content) {
+
+        content.classList.add(
+            "hidden"
+        );
+    }
+
+
+    const button =
+        document.getElementById(
+            "imageContinue"
+        );
+
+
+    if (button) {
+
+        button.disabled =
+            false;
+    }
+}
+
+
+/* =========================================================
+   STEPS
+========================================================= */
+
+function showStep(step) {
+
+    document
+        .querySelectorAll(".app-step")
+        .forEach(section => {
+
+            section.classList.add(
+                "hidden"
+            );
+
+        });
+
+
+    const target =
+        document.getElementById(
+            `step${step}`
+        );
+
+
+    if (target) {
+
+        target.classList.remove(
+            "hidden"
+        );
+    }
+
+
+    const progress =
+        document.getElementById(
+            "progress"
+        );
+
+
+    if (progress) {
+
+        const percentage =
+            Math.min(
+                step * 25,
+                100
+            );
+
+        progress.style.width =
+            `${percentage}%`;
+    }
+
+
+    const label =
+        document.getElementById(
+            "step-label"
+        );
+
+
+    if (label) {
+
+        label.textContent =
+            `Step ${step} of 4`;
+    }
+
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+
+/* =========================================================
+   NEXT STEP
+========================================================= */
+
+function nextStep(step) {
+
+    showStep(step);
+}
+
+
+/* =========================================================
+   CATEGORY
+========================================================= */
+
+function selectCategory(
+    button,
+    category
+) {
+
+    document
+        .querySelectorAll(
+            ".category-grid button"
+        )
+        .forEach(btn => {
+
+            btn.classList.remove(
+                "selected"
+            );
+
+        });
+
+
+    button.classList.add(
+        "selected"
+    );
+
+
+    selectedCategory =
+        category;
+
+
+    const continueButton =
+        document.getElementById(
+            "categoryContinue"
+        );
+
+
+    if (continueButton) {
+
+        continueButton.disabled =
+            false;
+    }
+}
+
+
+/* =========================================================
+   ROLES
 ========================================================= */
 
 const rolesByCategory = {
@@ -73,261 +298,12 @@ const rolesByCategory = {
         "Creative project",
         "Other"
     ]
+
 };
 
 
 /* =========================================================
-   LOCAL FALLBACK QUESTIONS
-   Used if AI question generation fails.
-========================================================= */
-
-const fallbackQuestions = [
-
-    {
-        question:
-            "Does this item still have a meaningful role in your life?",
-        weight: 3,
-        answers: [
-            ["Definitely", 3],
-            ["Probably", 2],
-            ["I'm not sure", 0],
-            ["Probably not", -2],
-            ["Not at all", -3]
-        ]
-    },
-
-    {
-        question:
-            "How often do you realistically use this?",
-        weight: 3,
-        answers: [
-            ["Very often", 3],
-            ["Regularly", 2],
-            ["Sometimes", 0],
-            ["Rarely", -2],
-            ["Almost never", -3]
-        ]
-    },
-
-    {
-        question:
-            "If this disappeared tomorrow, would you want to replace it?",
-        weight: 3,
-        answers: [
-            ["Definitely", 3],
-            ["Probably", 2],
-            ["I'm not sure", 0],
-            ["Probably not", -2],
-            ["Definitely not", -3]
-        ]
-    },
-
-    {
-        question:
-            "Do you already have something that fills the same role?",
-        weight: 2,
-        answers: [
-            ["No", 2],
-            ["Yes, but this is different", 1],
-            ["Yes, equally useful", 0],
-            ["Yes, very similarly", -2],
-            ["Yes, and I prefer the alternative", -3]
-        ]
-    },
-
-    {
-        question:
-            "Would you choose to own this again today?",
-        weight: 3,
-        answers: [
-            ["Definitely", 3],
-            ["Probably", 2],
-            ["I'm not sure", 0],
-            ["Probably not", -2],
-            ["Definitely not", -3]
-        ]
-    }
-];
-
-
-/* =========================================================
-   API
-========================================================= */
-
-const API_URL =
-    "https://declutter-ai-api.plewko-olga.workers.dev/";
-
-
-/* =========================================================
-   START APP
-========================================================= */
-
-function startApp() {
-
-    document
-        .getElementById("landing")
-        .classList.add("hidden");
-
-    document
-        .getElementById("app")
-        .classList.remove("hidden");
-
-    showStep(1);
-}
-
-
-/* =========================================================
-   IMAGE
-========================================================= */
-
-function previewImage(event) {
-
-    const file =
-        event.target.files[0];
-
-    if (!file) return;
-
-    uploadedImage = file;
-
-    const preview =
-        document.getElementById(
-            "imagePreview"
-        );
-
-    const content =
-        document.getElementById(
-            "uploadContent"
-        );
-
-    if (preview) {
-
-        preview.src =
-            URL.createObjectURL(file);
-
-        preview.classList.remove(
-            "hidden"
-        );
-    }
-
-    if (content) {
-
-        content.classList.add(
-            "hidden"
-        );
-    }
-
-    const button =
-        document.getElementById(
-            "imageContinue"
-        );
-
-    if (button) {
-
-        button.disabled = false;
-    }
-}
-
-
-/* =========================================================
-   STEPS
-========================================================= */
-
-function showStep(step) {
-
-    document
-        .querySelectorAll(".app-step")
-        .forEach(section =>
-            section.classList.add("hidden")
-        );
-
-    const target =
-        document.getElementById(
-            `step${step}`
-        );
-
-    if (target) {
-
-        target.classList.remove(
-            "hidden"
-        );
-    }
-
-    const progress =
-        document.getElementById(
-            "progress"
-        );
-
-    if (progress) {
-
-        progress.style.width =
-            `${step * 25}%`;
-    }
-
-    const label =
-        document.getElementById(
-            "step-label"
-        );
-
-    if (label) {
-
-        label.textContent =
-            `Step ${step} of 4`;
-    }
-}
-
-
-function nextStep(step) {
-
-    showStep(step);
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-}
-
-
-/* =========================================================
-   CATEGORY
-========================================================= */
-
-function selectCategory(
-    button,
-    category
-) {
-
-    document
-        .querySelectorAll(
-            ".category-grid button"
-        )
-        .forEach(btn =>
-            btn.classList.remove(
-                "selected"
-            )
-        );
-
-    button.classList.add(
-        "selected"
-    );
-
-    selectedCategory =
-        category;
-
-    const continueButton =
-        document.getElementById(
-            "categoryContinue"
-        );
-
-    if (continueButton) {
-
-        continueButton.disabled =
-            false;
-    }
-}
-
-
-/* =========================================================
-   ROLE SCREEN
+   GENERATE ROLES
 ========================================================= */
 
 function generateRoles() {
@@ -337,21 +313,25 @@ function generateRoles() {
             "roles"
         );
 
+
     if (!container) {
 
         console.error(
-            "Missing #roles element in HTML."
+            "Missing #roles element."
         );
 
         return;
     }
 
+
     container.innerHTML = "";
+
 
     const roles =
         rolesByCategory[
             selectedCategory
         ];
+
 
     if (!roles) {
 
@@ -363,6 +343,7 @@ function generateRoles() {
         return;
     }
 
+
     roles.forEach(role => {
 
         const button =
@@ -370,26 +351,43 @@ function generateRoles() {
                 "button"
             );
 
+
+        button.type =
+            "button";
+
+
         button.textContent =
             role;
+
 
         button.className =
             "role-button";
 
-        button.onclick = () =>
+
+        button.onclick = () => {
+
             selectRole(
                 button,
                 role
             );
 
+        };
+
+
         container.appendChild(
             button
         );
+
     });
+
 
     showStep(3);
 }
 
+
+/* =========================================================
+   SELECT ROLE
+========================================================= */
 
 function selectRole(
     button,
@@ -400,23 +398,29 @@ function selectRole(
         .querySelectorAll(
             ".role-button"
         )
-        .forEach(btn =>
+        .forEach(btn => {
+
             btn.classList.remove(
                 "selected"
-            )
-        );
+            );
+
+        });
+
 
     button.classList.add(
         "selected"
     );
 
+
     selectedRole =
         role;
+
 
     const continueButton =
         document.getElementById(
             "roleContinue"
         );
+
 
     if (continueButton) {
 
@@ -427,445 +431,83 @@ function selectRole(
 
 
 /* =========================================================
-   LOADING UI
-========================================================= */
-
-function showQuestionLoading() {
-
-    const container =
-        document.getElementById(
-            "questions"
-        );
-
-    if (!container) return;
-
-    container.innerHTML = `
-        <div class="question-loading">
-            <p>Declutter.AI is thinking...</p>
-        </div>
-    `;
-}
-
-
-/* =========================================================
-   NORMALIZE AI QUESTIONS
-========================================================= */
-
-function normalizeAIQuestions(
-    questions
-) {
-
-    if (!Array.isArray(questions)) {
-
-        throw new Error(
-            "AI did not return a questions array."
-        );
-    }
-
-    if (questions.length === 0) {
-
-        throw new Error(
-            "AI returned no questions."
-        );
-    }
-
-    return questions
-        .slice(0, 5)
-        .map(question => {
-
-            if (
-                !question ||
-                typeof question.question !==
-                    "string" ||
-                !Array.isArray(
-                    question.answers
-                )
-            ) {
-
-                throw new Error(
-                    "Invalid AI question format."
-                );
-            }
-
-            const answers =
-                question.answers
-                    .slice(0, 5)
-                    .map(answer => {
-
-                        if (
-                            typeof answer ===
-                            "string"
-                        ) {
-                            return [
-                                answer,
-                                0
-                            ];
-                        }
-
-                        if (
-                            Array.isArray(
-                                answer
-                            )
-                        ) {
-                            return [
-                                String(
-                                    answer[0]
-                                ),
-                                Number(
-                                    answer[1]
-                                ) || 0
-                            ];
-                        }
-
-                        return null;
-                    })
-                    .filter(Boolean);
-
-            if (
-                answers.length < 2
-            ) {
-
-                throw new Error(
-                    "AI question has too few answers."
-                );
-            }
-
-            return {
-
-                question:
-                    question.question,
-
-                weight: 1,
-
-                answers:
-                    answers
-            };
-        });
-}
-
-
-/* =========================================================
-   AI QUESTION GENERATION
-========================================================= */
-
-async function generateAIQuestions() {
-
-    const response =
-        await fetch(
-            API_URL,
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-
-                body: JSON.stringify({
-
-                    mode:
-                        "generate_questions",
-
-                    category:
-                        selectedCategory,
-
-                    role:
-                        selectedRole
-                })
-            }
-        );
-
-    const data =
-        await response.json();
-
-    if (
-        !response.ok ||
-        !data.result
-    ) {
-
-        throw new Error(
-            "Question generation request failed."
-        );
-    }
-
-    const content =
-        data.result
-            ?.choices?.[0]
-            ?.message?.content;
-
-    if (!content) {
-
-        throw new Error(
-            "AI returned no question content."
-        );
-    }
-
-    const cleaned =
-        content
-            .replace(
-                /```json/gi,
-                ""
-            )
-            .replace(
-                /```/g,
-                ""
-            )
-            .trim();
-
-    const parsed =
-        JSON.parse(cleaned);
-
-    return normalizeAIQuestions(
-        parsed.questions
-    );
-}
-
-
-/* =========================================================
-   RENDER QUESTIONS
-========================================================= */
-
-function renderQuestions() {
-
-    const container =
-        document.getElementById(
-            "questions"
-        );
-
-    if (!container) {
-
-        console.error(
-            "Missing #questions element."
-        );
-
-        return;
-    }
-
-    container.innerHTML = "";
-
-    currentQuestions.forEach(
-        (question, index) => {
-
-            const wrapper =
-                document.createElement(
-                    "div"
-                );
-
-            wrapper.className =
-                "question";
-
-
-            const label =
-                document.createElement(
-                    "label"
-                );
-
-            label.textContent =
-                question.question;
-
-
-            const select =
-                document.createElement(
-                    "select"
-                );
-
-            select.className =
-                "answer";
-
-            select.dataset.question =
-                index;
-
-
-            const placeholder =
-                document.createElement(
-                    "option"
-                );
-
-            placeholder.value = "";
-
-            placeholder.textContent =
-                "Choose an answer";
-
-            select.appendChild(
-                placeholder
-            );
-
-
-            question.answers.forEach(
-                (
-                    answer,
-                    answerIndex
-                ) => {
-
-                    const option =
-                        document.createElement(
-                            "option"
-                        );
-
-                    option.value =
-                        answerIndex;
-
-                    option.textContent =
-                        answer[0];
-
-                    select.appendChild(
-                        option
-                    );
-                }
-            );
-
-
-            wrapper.appendChild(
-                label
-            );
-
-            wrapper.appendChild(
-                select
-            );
-
-            container.appendChild(
-                wrapper
-            );
-        }
-    );
-
-    showStep(4);
-}
-
-
-/* =========================================================
-   GENERATE QUESTIONS
-   AI FIRST
-   FALLBACK SECOND
+   START CHAT
 ========================================================= */
 
 async function generateQuestions() {
 
-    showQuestionLoading();
-
-    try {
-
-        currentQuestions =
-            await generateAIQuestions();
-
-        console.log(
-            "Declutter.AI generated questions:",
-            currentQuestions
-        );
-
-        renderQuestions();
-
-    } catch (error) {
-
-        console.warn(
-            "AI question generation failed. Using fallback.",
-            error
-        );
-
-        currentQuestions =
-            fallbackQuestions;
-
-        renderQuestions();
-    }
-}
-
-
-/* =========================================================
-   COLLECT ANSWERS
-========================================================= */
-
-function collectAnswers() {
-
-    const selects =
-        document.querySelectorAll(
-            ".answer"
-        );
-
-    const answers = [];
-
-    currentQuestions.forEach(
-        (
-            question,
-            index
-        ) => {
-
-            const select =
-                selects[index];
-
-            if (
-                !select ||
-                select.value === ""
-            ) {
-                return;
-            }
-
-            const answerIndex =
-                Number(
-                    select.value
-                );
-
-            const answer =
-                question.answers[
-                    answerIndex
-                ];
-
-            if (!answer) return;
-
-            answers.push({
-
-                question:
-                    question.question,
-
-                answer:
-                    answer[0]
-            });
-        }
-    );
-
-    return answers;
-}
-
-
-/* =========================================================
-   CLEAN AI JSON
-========================================================= */
-
-function cleanAIJSON(content) {
-
-    return content
-        .replace(
-            /```json/gi,
-            ""
-        )
-        .replace(
-            /```/g,
-            ""
-        )
-        .trim();
-}
-
-
-/* =========================================================
-   ANALYZE ITEM
-========================================================= */
-
-async function analyzeItem() {
-
-    const answers =
-        collectAnswers();
-
-
-    if (
-        answers.length <
-        currentQuestions.length
-    ) {
+    if (!selectedCategory) {
 
         alert(
-            "Please answer every question before continuing."
+            "Please choose a category first."
         );
 
         return;
     }
+
+
+    if (!selectedRole) {
+
+        alert(
+            "Please choose the role of the item first."
+        );
+
+        return;
+    }
+
+
+    conversation = [];
+
+    itemType = "";
+
+
+    const chatWindow =
+        document.getElementById(
+            "chatWindow"
+        );
+
+
+    if (chatWindow) {
+
+        chatWindow.innerHTML = "";
+    }
+
+
+    const confirmation =
+        document.getElementById(
+            "itemConfirmationText"
+        );
+
+
+    if (confirmation) {
+
+        confirmation.textContent =
+            `${selectedCategory} · ${selectedRole}`;
+    }
+
+
+    showStep(4);
+
+
+    await askAI();
+}
+
+
+/* =========================================================
+   ASK AI
+========================================================= */
+
+async function askAI() {
+
+    if (chatBusy) {
+        return;
+    }
+
+
+    chatBusy = true;
+
+
+    addTypingMessage();
 
 
     try {
@@ -883,8 +525,7 @@ async function analyzeItem() {
 
                     body: JSON.stringify({
 
-                        mode:
-                            "analyze",
+                        mode: "chat",
 
                         category:
                             selectedCategory,
@@ -892,9 +533,15 @@ async function analyzeItem() {
                         role:
                             selectedRole,
 
-                        answers:
-                            answers
+                        itemType:
+                            itemType ||
+                            "unknown item",
+
+                        conversation:
+                            conversation
+
                     })
+
                 }
             );
 
@@ -903,160 +550,741 @@ async function analyzeItem() {
             await response.json();
 
 
-        if (
-            !response.ok ||
-            !data.result
-        ) {
+        removeTypingMessage();
+
+
+        if (!response.ok) {
+
+            console.error(
+                "API error:",
+                data
+            );
 
             throw new Error(
-                "AI analysis request failed."
+                "AI request failed."
             );
         }
 
 
         const aiContent =
-            data.result
+            data
+                ?.result
                 ?.choices?.[0]
-                ?.message?.content;
+                ?.message
+                ?.content;
 
 
         if (!aiContent) {
 
+            console.error(
+                "Empty AI response:",
+                data
+            );
+
             throw new Error(
-                "AI returned no analysis."
+                "AI returned no content."
             );
         }
 
 
-        const cleanedContent =
-            cleanAIJSON(
+        const parsed =
+            parseAIResponse(
                 aiContent
             );
 
 
-        const aiResult =
-            JSON.parse(
-                cleanedContent
+        if (!parsed) {
+
+            throw new Error(
+                "Could not understand AI response."
             );
-
-
-        /* =====================================
-           RECOMMENDATION
-        ===================================== */
-
-        const recommendation =
-            document.getElementById(
-                "recommendation"
-            );
-
-        if (recommendation) {
-
-            recommendation.textContent =
-                String(
-                    aiResult.recommendation ||
-                    "UNCERTAIN"
-                )
-                    .replace(
-                        /_/g,
-                        " "
-                    );
         }
 
 
         /* =====================================
-           CONFIDENCE
+           AI QUESTION
         ===================================== */
 
-        const confidenceElement =
-            document.getElementById(
-                "confidence"
+        if (
+            parsed.type ===
+            "question"
+        ) {
+
+            addChatMessage(
+                "ai",
+                parsed.question
             );
 
-        if (confidenceElement) {
 
-            let confidence =
-                Number(
-                    aiResult.confidence
-                );
+            conversation.push({
 
-            if (
-                !Number.isFinite(
-                    confidence
-                )
-            ) {
+                role: "assistant",
 
-                confidence = 0;
-            }
+                content:
+                    parsed.question
 
-            confidence =
-                Math.max(
-                    0,
-                    Math.min(
-                        100,
-                        Math.round(
-                            confidence
-                        )
+            });
+
+
+            return;
+        }
+
+
+        /* =====================================
+           AI RESULT
+        ===================================== */
+
+        if (
+            parsed.type ===
+            "result"
+        ) {
+
+            conversation.push({
+
+                role: "assistant",
+
+                content:
+                    JSON.stringify(
+                        parsed
                     )
-                );
 
-            confidenceElement.textContent =
-                `${confidence}%`;
-        }
+            });
 
 
-        /* =====================================
-           REASONING
-        ===================================== */
-
-        const reasoningElement =
-            document.getElementById(
-                "reasoningText"
+            showResult(
+                parsed
             );
 
-        if (reasoningElement) {
 
-            reasoningElement.textContent =
-                aiResult.reasoning ||
-                "Your answers suggest this recommendation based on the item's current role in your life.";
+            return;
         }
 
 
-        /* =====================================
-           REFLECTION
-        ===================================== */
-
-        const reflectionElement =
-            document.getElementById(
-                "reflectionText"
-            );
-
-        if (reflectionElement) {
-
-            reflectionElement.textContent =
-                aiResult.reflection ||
-                "";
-        }
-
-
-        showStep(5);
-
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
+        throw new Error(
+            "Unknown AI response type."
+        );
 
 
     } catch (error) {
+
+        removeTypingMessage();
+
 
         console.error(
             "Declutter AI error:",
             error
         );
 
-        alert(
-            "Something went wrong while analyzing your item. Please try again."
+
+        addChatMessage(
+            "ai",
+            "Something went wrong while talking to the AI. Please try again."
         );
+
+    } finally {
+
+        chatBusy = false;
+
+        updateChatButton();
     }
+}
+
+
+/* =========================================================
+   PARSE AI RESPONSE
+========================================================= */
+
+function parseAIResponse(
+    content
+) {
+
+    let cleaned =
+        content.trim();
+
+
+    /*
+       Remove markdown code blocks.
+    */
+
+    cleaned =
+        cleaned
+            .replace(
+                /```json/gi,
+                ""
+            )
+            .replace(
+                /```/g,
+                ""
+            )
+            .trim();
+
+
+    /*
+       Try direct JSON.
+    */
+
+    try {
+
+        return JSON.parse(
+            cleaned
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Direct JSON parsing failed."
+        );
+
+    }
+
+
+    /*
+       Try extracting JSON
+       from surrounding text.
+    */
+
+    const firstBrace =
+        cleaned.indexOf("{");
+
+
+    const lastBrace =
+        cleaned.lastIndexOf("}");
+
+
+    if (
+        firstBrace !== -1 &&
+        lastBrace !== -1 &&
+        lastBrace > firstBrace
+    ) {
+
+        const jsonPart =
+            cleaned.substring(
+                firstBrace,
+                lastBrace + 1
+            );
+
+
+        try {
+
+            return JSON.parse(
+                jsonPart
+            );
+
+        } catch (error) {
+
+            console.error(
+                "JSON extraction failed:",
+                error
+            );
+
+        }
+
+    }
+
+
+    return null;
+}
+
+
+/* =========================================================
+   SEND USER MESSAGE
+========================================================= */
+
+async function sendChatMessage() {
+
+    if (chatBusy) {
+        return;
+    }
+
+
+    const input =
+        document.getElementById(
+            "chatInput"
+        );
+
+
+    if (!input) {
+        return;
+    }
+
+
+    const text =
+        input.value.trim();
+
+
+    if (!text) {
+        return;
+    }
+
+
+    /*
+       Display user's message.
+    */
+
+    addChatMessage(
+        "user",
+        text
+    );
+
+
+    /*
+       Add it to conversation.
+    */
+
+    conversation.push({
+
+        role: "user",
+
+        content: text
+
+    });
+
+
+    /*
+       Clear input.
+    */
+
+    input.value = "";
+
+
+    autoResizeInput();
+
+
+    /*
+       Ask AI for next step.
+    */
+
+    await askAI();
+}
+
+
+/* =========================================================
+   CHAT MESSAGE UI
+========================================================= */
+
+function addChatMessage(
+    type,
+    text
+) {
+
+    const chatWindow =
+        document.getElementById(
+            "chatWindow"
+        );
+
+
+    if (!chatWindow) {
+        return;
+    }
+
+
+    const message =
+        document.createElement(
+            "div"
+        );
+
+
+    message.className =
+        `chat-message ${type}`;
+
+
+    message.textContent =
+        text;
+
+
+    chatWindow.appendChild(
+        message
+    );
+
+
+    scrollChatToBottom();
+}
+
+
+/* =========================================================
+   TYPING INDICATOR
+========================================================= */
+
+function addTypingMessage() {
+
+    const chatWindow =
+        document.getElementById(
+            "chatWindow"
+        );
+
+
+    if (!chatWindow) {
+        return;
+    }
+
+
+    removeTypingMessage();
+
+
+    const typing =
+        document.createElement(
+            "div"
+        );
+
+
+    typing.id =
+        "typingMessage";
+
+
+    typing.className =
+        "chat-message ai typing";
+
+
+    typing.textContent =
+        "Thinking…";
+
+
+    chatWindow.appendChild(
+        typing
+    );
+
+
+    scrollChatToBottom();
+}
+
+
+/* =========================================================
+   REMOVE TYPING
+========================================================= */
+
+function removeTypingMessage() {
+
+    const typing =
+        document.getElementById(
+            "typingMessage"
+        );
+
+
+    if (typing) {
+
+        typing.remove();
+    }
+}
+
+
+/* =========================================================
+   SCROLL CHAT
+========================================================= */
+
+function scrollChatToBottom() {
+
+    const chatWindow =
+        document.getElementById(
+            "chatWindow"
+        );
+
+
+    if (!chatWindow) {
+        return;
+    }
+
+
+    requestAnimationFrame(() => {
+
+        chatWindow.scrollTop =
+            chatWindow.scrollHeight;
+
+    });
+}
+
+
+/* =========================================================
+   CHAT BUTTON
+========================================================= */
+
+function updateChatButton() {
+
+    const button =
+        document.getElementById(
+            "chatSend"
+        );
+
+
+    const input =
+        document.getElementById(
+            "chatInput"
+        );
+
+
+    if (!button) {
+        return;
+    }
+
+
+    if (chatBusy) {
+
+        button.disabled =
+            true;
+
+        button.textContent =
+            "Thinking…";
+
+        return;
+    }
+
+
+    button.disabled =
+        !input ||
+        !input.value.trim();
+
+
+    button.textContent =
+        "Send →";
+}
+
+
+/* =========================================================
+   INPUT AUTO RESIZE
+========================================================= */
+
+function autoResizeInput() {
+
+    const input =
+        document.getElementById(
+            "chatInput"
+        );
+
+
+    if (!input) {
+        return;
+    }
+
+
+    input.style.height =
+        "auto";
+
+
+    input.style.height =
+        `${Math.min(
+            input.scrollHeight,
+            140
+        )}px`;
+}
+
+
+/* =========================================================
+   KEYBOARD
+========================================================= */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        const input =
+            document.getElementById(
+                "chatInput"
+            );
+
+
+        if (!input) {
+            return;
+        }
+
+
+        input.addEventListener(
+            "input",
+            () => {
+
+                autoResizeInput();
+
+                updateChatButton();
+
+            }
+        );
+
+
+        input.addEventListener(
+            "keydown",
+            event => {
+
+                /*
+                   Enter = send
+                   Shift + Enter = new line
+                */
+
+                if (
+                    event.key ===
+                    "Enter" &&
+                    !event.shiftKey
+                ) {
+
+                    event.preventDefault();
+
+                    sendChatMessage();
+
+                }
+
+            }
+        );
+
+
+        updateChatButton();
+
+    }
+);
+
+
+/* =========================================================
+   SHOW RESULT
+========================================================= */
+
+function showResult(
+    result
+) {
+
+    const recommendation =
+        document.getElementById(
+            "recommendation"
+        );
+
+
+    const confidence =
+        document.getElementById(
+            "confidence"
+        );
+
+
+    const reasoning =
+        document.getElementById(
+            "reasoningText"
+        );
+
+
+    const reflection =
+        document.getElementById(
+            "reflectionText"
+        );
+
+
+    /*
+       Recommendation
+    */
+
+    if (recommendation) {
+
+        recommendation.textContent =
+            String(
+                result.recommendation ||
+                "UNCERTAIN"
+            )
+                .replace(
+                    /_/g,
+                    " "
+                )
+                .toUpperCase();
+    }
+
+
+    /*
+       Confidence
+    */
+
+    if (confidence) {
+
+        const value =
+            Math.round(
+                Number(
+                    result.confidence
+                )
+            );
+
+
+        confidence.textContent =
+            `${value}% confidence`;
+    }
+
+
+    /*
+       Reasoning
+    */
+
+    if (reasoning) {
+
+        reasoning.textContent =
+            result.reasoning ||
+            "";
+    }
+
+
+    /*
+       Reflection
+    */
+
+    if (reflection) {
+
+        reflection.textContent =
+            result.reflection ||
+            "";
+    }
+
+
+    /*
+       Result icon
+    */
+
+    const icon =
+        document.getElementById(
+            "resultIcon"
+        );
+
+
+    if (icon) {
+
+        const recommendationValue =
+            String(
+                result.recommendation ||
+                ""
+            ).toUpperCase();
+
+
+        const icons = {
+
+            KEEP: "♡",
+
+            SELL: "↗",
+
+            DONATE: "♡",
+
+            DISCARD: "×",
+
+            RECYCLE: "↻"
+
+        };
+
+
+        icon.textContent =
+            icons[
+                recommendationValue
+            ] || "✦";
+    }
+
+
+    showStep(5);
+}
+
+
+/* =========================================================
+   OLD FUNCTION COMPATIBILITY
+========================================================= */
+
+async function analyzeItem() {
+
+    /*
+       Kept so old HTML references
+       do not cause errors.
+
+       The new app does not use this
+       button anymore.
+    */
+
+    console.log(
+        "The new chat engine handles analysis automatically."
+    );
 }
 
 
@@ -1067,15 +1295,27 @@ async function analyzeItem() {
 function newItem() {
 
     selectedCategory = "";
-    selectedRole = "";
-    uploadedImage = null;
-    currentQuestions = [];
 
+    selectedRole = "";
+
+    uploadedImage = null;
+
+    itemType = "";
+
+    conversation = [];
+
+    chatBusy = false;
+
+
+    /*
+       Reset file input.
+    */
 
     const input =
         document.getElementById(
             "imageInput"
         );
+
 
     if (input) {
 
@@ -1083,12 +1323,19 @@ function newItem() {
     }
 
 
+    /*
+       Reset image preview.
+    */
+
     const preview =
         document.getElementById(
             "imagePreview"
         );
 
+
     if (preview) {
+
+        preview.src = "";
 
         preview.classList.add(
             "hidden"
@@ -1096,10 +1343,15 @@ function newItem() {
     }
 
 
+    /*
+       Restore upload content.
+    */
+
     const content =
         document.getElementById(
             "uploadContent"
         );
+
 
     if (content) {
 
@@ -1109,26 +1361,199 @@ function newItem() {
     }
 
 
-    const categoryButtons =
-        document.querySelectorAll(
-            ".category-grid button"
+    /*
+       Reset image button.
+    */
+
+    const imageButton =
+        document.getElementById(
+            "imageContinue"
         );
 
-    categoryButtons.forEach(
-        button =>
+
+    if (imageButton) {
+
+        imageButton.disabled =
+            true;
+    }
+
+
+    /*
+       Reset category buttons.
+    */
+
+    document
+        .querySelectorAll(
+            ".category-grid button"
+        )
+        .forEach(button => {
+
             button.classList.remove(
                 "selected"
-            )
-    );
+            );
+
+        });
+
+
+    /*
+       Reset category button.
+    */
+
+    const categoryButton =
+        document.getElementById(
+            "categoryContinue"
+        );
+
+
+    if (categoryButton) {
+
+        categoryButton.disabled =
+            true;
+    }
+
+
+    /*
+       Reset role container.
+    */
+
+    const roles =
+        document.getElementById(
+            "roles"
+        );
+
+
+    if (roles) {
+
+        roles.innerHTML = "";
+    }
+
+
+    /*
+       Reset role button.
+    */
+
+    const roleButton =
+        document.getElementById(
+            "roleContinue"
+        );
+
+
+    if (roleButton) {
+
+        roleButton.disabled =
+            true;
+    }
+
+
+    /*
+       Reset chat.
+    */
+
+    const chatWindow =
+        document.getElementById(
+            "chatWindow"
+        );
+
+
+    if (chatWindow) {
+
+        chatWindow.innerHTML = "";
+    }
+
+
+    /*
+       Reset chat input.
+    */
+
+    const chatInput =
+        document.getElementById(
+            "chatInput"
+        );
+
+
+    if (chatInput) {
+
+        chatInput.value = "";
+
+        chatInput.style.height =
+            "auto";
+    }
+
+
+    /*
+       Reset item context.
+    */
+
+    const confirmation =
+        document.getElementById(
+            "itemConfirmationText"
+        );
+
+
+    if (confirmation) {
+
+        confirmation.textContent =
+            "Getting ready...";
+    }
+
+
+    /*
+       Reset result.
+    */
+
+    const recommendation =
+        document.getElementById(
+            "recommendation"
+        );
+
+
+    if (recommendation) {
+
+        recommendation.textContent =
+            "UNCERTAIN";
+    }
+
+
+    const confidence =
+        document.getElementById(
+            "confidence"
+        );
+
+
+    if (confidence) {
+
+        confidence.textContent =
+            "—";
+    }
+
+
+    const reasoning =
+        document.getElementById(
+            "reasoningText"
+        );
+
+
+    if (reasoning) {
+
+        reasoning.textContent =
+            "Your reasoning will appear here.";
+    }
+
+
+    const reflection =
+        document.getElementById(
+            "reflectionText"
+        );
+
+
+    if (reflection) {
+
+        reflection.textContent =
+            "";
+    }
 
 
     showStep(1);
-
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
 }
 
 
@@ -1142,4 +1567,3 @@ function saveItem() {
         "Saving items will be available in a future version."
     );
 }
-         
