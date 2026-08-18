@@ -1,58 +1,40 @@
 /* =========================================================
    DECLUTTER.AI — PRODUCTION CHAT ENGINE
-   ========================================================= */
-
-"use strict";
+========================================================= */
 
 
 /* =========================================================
    GLOBAL STATE
-   ========================================================= */
+========================================================= */
 
 let selectedCategory = "";
 let selectedRole = "";
 
 let uploadedImage = null;
-let uploadedImageData = "";
+let imageDataURL = "";
 
 let itemType = "";
-let itemIdentificationConfidence = 0;
+let identificationConfidence = 0;
 
 let conversation = [];
 
 let chatBusy = false;
-let currentAbortController = null;
+let identificationBusy = false;
 
-let currentStep = 1;
-
-let loadingTimer = null;
-let loadingStartedAt = 0;
-
-let identificationCache = null;
+let progressValue = 0;
 
 
 /* =========================================================
    API
-   ========================================================= */
+========================================================= */
 
 const API_URL =
     "https://declutter-ai-api.plewko-olga.workers.dev/";
 
 
 /* =========================================================
-   CONFIG
-   ========================================================= */
-
-const REQUEST_TIMEOUT = 60000;
-
-const IMAGE_MAX_WIDTH = 1400;
-
-const MAX_IMAGE_DATA_LENGTH = 1800000;
-
-
-/* =========================================================
    ROLES
-   ========================================================= */
+========================================================= */
 
 const rolesByCategory = {
 
@@ -119,7 +101,7 @@ const rolesByCategory = {
 
 /* =========================================================
    START APP
-   ========================================================= */
+========================================================= */
 
 function startApp() {
 
@@ -142,76 +124,10 @@ function startApp() {
 
 
 /* =========================================================
-   STEP SYSTEM
-   ========================================================= */
+   IMAGE PREVIEW + BASE64
+========================================================= */
 
-function showStep(step) {
-
-    currentStep = step;
-
-    document
-        .querySelectorAll(".app-step")
-        .forEach(section => {
-            section.classList.add("hidden");
-        });
-
-    const target =
-        document.getElementById(`step${step}`);
-
-    if (target) {
-        target.classList.remove("hidden");
-    }
-
-    updateProgress(step);
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-}
-
-
-function nextStep(step) {
-    showStep(step);
-}
-
-
-/* =========================================================
-   PROGRESS
-   ========================================================= */
-
-function updateProgress(step) {
-
-    const progress =
-        document.getElementById("progress");
-
-    const label =
-        document.getElementById("step-label");
-
-    if (progress) {
-
-        const percentage =
-            Math.min(
-                ((step - 1) / 4) * 100,
-                100
-            );
-
-        progress.style.width =
-            `${percentage}%`;
-    }
-
-    if (label) {
-        label.textContent =
-            `Step ${step} of 5`;
-    }
-}
-
-
-/* =========================================================
-   IMAGE PREVIEW
-   ========================================================= */
-
-async function previewImage(event) {
+function previewImage(event) {
 
     const file =
         event.target.files?.[0];
@@ -222,165 +138,151 @@ async function previewImage(event) {
 
     uploadedImage = file;
 
-    try {
-
-        uploadedImageData =
-            await prepareImage(file);
-
-        console.log(
-            "Image loaded for AI:",
-            uploadedImageData.substring(0, 80) + "..."
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Image preparation failed:",
-            error
-        );
-
-        uploadedImageData = "";
-
-        alert(
-            "I couldn't prepare this image. Please try another image."
-        );
-
-        return;
-    }
-
-
     const preview =
         document.getElementById("imagePreview");
 
     const content =
         document.getElementById("uploadContent");
 
+    const button =
+        document.getElementById("imageContinue");
+
+
     if (preview) {
 
         preview.src =
-            uploadedImageData;
+            URL.createObjectURL(file);
 
         preview.classList.remove("hidden");
     }
+
 
     if (content) {
         content.classList.add("hidden");
     }
 
-    const button =
-        document.getElementById("imageContinue");
 
     if (button) {
         button.disabled = false;
     }
+
+
+    /*
+       Convert image to a data URL.
+
+       This is what allows the Worker
+       to actually send the image to the
+       vision-capable model.
+    */
+
+    const reader =
+        new FileReader();
+
+    reader.onload = () => {
+
+        imageDataURL =
+            reader.result;
+
+        console.log(
+            "Image loaded for AI:",
+            imageDataURL.substring(0, 80) + "..."
+        );
+
+    };
+
+    reader.onerror = () => {
+
+        console.error(
+            "Could not read image."
+        );
+
+        imageDataURL = "";
+
+    };
+
+    reader.readAsDataURL(file);
 }
 
 
 /* =========================================================
-   IMAGE PREPARATION
-   ========================================================= */
+   STEPS
+========================================================= */
 
-function prepareImage(file) {
+function showStep(step) {
 
-    return new Promise((resolve, reject) => {
+    document
+        .querySelectorAll(".app-step")
+        .forEach(section => {
 
-        const reader =
-            new FileReader();
+            section.classList.add("hidden");
 
-        reader.onload = () => {
-
-            const image =
-                new Image();
-
-            image.onload = () => {
-
-                let width =
-                    image.naturalWidth;
-
-                let height =
-                    image.naturalHeight;
+        });
 
 
-                if (width > IMAGE_MAX_WIDTH) {
-
-                    const ratio =
-                        IMAGE_MAX_WIDTH / width;
-
-                    width =
-                        IMAGE_MAX_WIDTH;
-
-                    height =
-                        Math.round(
-                            height * ratio
-                        );
-                }
+    const target =
+        document.getElementById(
+            `step${step}`
+        );
 
 
-                const canvas =
-                    document.createElement("canvas");
-
-                canvas.width =
-                    width;
-
-                canvas.height =
-                    height;
+    if (target) {
+        target.classList.remove("hidden");
+    }
 
 
-                const context =
-                    canvas.getContext("2d");
-
-                context.drawImage(
-                    image,
-                    0,
-                    0,
-                    width,
-                    height
-                );
+    const progress =
+        document.getElementById("progress");
 
 
-                let data =
-                    canvas.toDataURL(
-                        "image/webp",
-                        0.82
-                    );
+    if (progress) {
+
+        const percentage =
+            step === 1 ? 25 :
+            step === 2 ? 40 :
+            step === 3 ? 55 :
+            step === 4 ? Math.max(65, progressValue) :
+            100;
+
+        progress.style.width =
+            `${percentage}%`;
+    }
 
 
-                if (
-                    data.length >
-                    MAX_IMAGE_DATA_LENGTH
-                ) {
-
-                    data =
-                        canvas.toDataURL(
-                            "image/jpeg",
-                            0.72
-                        );
-                }
+    const label =
+        document.getElementById("step-label");
 
 
-                resolve(data);
-            };
+    if (label) {
+
+        label.textContent =
+            step === 4
+                ? "Understanding your item"
+                : `Step ${step} of 4`;
+
+    }
 
 
-            image.onerror =
-                reject;
-
-            image.src =
-                reader.result;
-        };
-
-
-        reader.onerror =
-            reject;
-
-        reader.readAsDataURL(file);
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
     });
 }
 
 
 /* =========================================================
+   NEXT STEP
+========================================================= */
+
+function nextStep(step) {
+
+    showStep(step);
+
+}
+
+
+/* =========================================================
    CATEGORY
-   ========================================================= */
+========================================================= */
 
 function selectCategory(
     button,
@@ -399,17 +301,21 @@ function selectCategory(
 
         });
 
+
     button.classList.add(
         "selected"
     );
 
+
     selectedCategory =
         category;
+
 
     const continueButton =
         document.getElementById(
             "categoryContinue"
         );
+
 
     if (continueButton) {
         continueButton.disabled = false;
@@ -419,7 +325,7 @@ function selectCategory(
 
 /* =========================================================
    GENERATE ROLES
-   ========================================================= */
+========================================================= */
 
 function generateRoles() {
 
@@ -430,24 +336,36 @@ function generateRoles() {
         return;
     }
 
+
     container.innerHTML = "";
 
+    selectedRole = "";
+
+
     const roles =
-        rolesByCategory[selectedCategory] || [];
+        rolesByCategory[
+            selectedCategory
+        ];
+
+
+    if (!roles) {
+        return;
+    }
+
 
     roles.forEach(role => {
 
         const button =
             document.createElement("button");
 
-        button.type =
-            "button";
+        button.type = "button";
 
         button.className =
             "role-button";
 
         button.textContent =
             role;
+
 
         button.onclick = () => {
 
@@ -458,10 +376,23 @@ function generateRoles() {
 
         };
 
+
         container.appendChild(
             button
         );
+
     });
+
+
+    const continueButton =
+        document.getElementById(
+            "roleContinue"
+        );
+
+    if (continueButton) {
+        continueButton.disabled = true;
+    }
+
 
     showStep(3);
 }
@@ -469,7 +400,7 @@ function generateRoles() {
 
 /* =========================================================
    SELECT ROLE
-   ========================================================= */
+========================================================= */
 
 function selectRole(
     button,
@@ -477,20 +408,32 @@ function selectRole(
 ) {
 
     document
-        .querySelectorAll(".role-button")
+        .querySelectorAll(
+            ".role-button"
+        )
         .forEach(btn => {
-            btn.classList.remove("selected");
+
+            btn.classList.remove(
+                "selected"
+            );
+
         });
 
-    button.classList.add("selected");
+
+    button.classList.add(
+        "selected"
+    );
+
 
     selectedRole =
         role;
+
 
     const continueButton =
         document.getElementById(
             "roleContinue"
         );
+
 
     if (continueButton) {
         continueButton.disabled = false;
@@ -499,30 +442,24 @@ function selectRole(
 
 
 /* =========================================================
-   START ANALYSIS
-   ========================================================= */
+   GENERATE QUESTIONS
+========================================================= */
 
 async function generateQuestions() {
 
     if (!selectedCategory) {
-
-        alert(
-            "Please choose a category first."
-        );
-
+        alert("Please choose a category first.");
         return;
     }
+
 
     if (!selectedRole) {
-
-        alert(
-            "Please choose the role of the item first."
-        );
-
+        alert("Please choose the role first.");
         return;
     }
 
-    if (!uploadedImageData) {
+
+    if (!imageDataURL) {
 
         alert(
             "Please upload an image first."
@@ -536,7 +473,9 @@ async function generateQuestions() {
 
     itemType = "";
 
-    itemIdentificationConfidence = 0;
+    identificationConfidence = 0;
+
+    progressValue = 60;
 
 
     const chatWindow =
@@ -549,23 +488,13 @@ async function generateQuestions() {
     }
 
 
-    const confirmation =
-        document.getElementById(
-            "itemConfirmationText"
-        );
-
-    if (confirmation) {
-        confirmation.textContent =
-            `${selectedCategory} · ${selectedRole}`;
-    }
-
-
     showStep(4);
 
+    setThinkingState(
+        "Looking closely at your item…",
+        60
+    );
 
-    /*
-       First identify the object visually.
-    */
 
     await identifyItem();
 }
@@ -573,84 +502,83 @@ async function generateQuestions() {
 
 /* =========================================================
    IDENTIFY ITEM
-   ========================================================= */
+========================================================= */
 
 async function identifyItem() {
 
-    if (!uploadedImageData) {
+    identificationBusy = true;
 
-        addChatMessage(
-            "ai",
-            "I couldn't access the image. Please upload it again."
-        );
-
-        return;
-    }
-
-
-    /*
-       Session cache.
-    */
-
-    const cacheKey =
-        createImageCacheKey(
-            uploadedImageData,
-            selectedCategory,
-            selectedRole
-        );
-
-
-    if (
-        identificationCache &&
-        identificationCache.key === cacheKey
-    ) {
-
-        itemType =
-            identificationCache.itemType;
-
-        itemIdentificationConfidence =
-            identificationCache.confidence;
-
-        addIdentificationMessage(
-            identificationCache.itemType,
-            identificationCache.confidence
-        );
-
-        await askAI();
-
-        return;
-    }
-
-
-    startLoading(
-        "Looking at your item…",
-        "Identifying the object"
+    setThinkingState(
+        "Looking closely at your item…",
+        60
     );
 
 
     try {
 
-        const data =
-            await apiRequest(
-                "identify",
+        const response =
+            await fetch(
+                API_URL,
                 {
-                    category:
-                        selectedCategory,
+                    method: "POST",
 
-                    role:
-                        selectedRole,
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-                    image:
-                        uploadedImageData
+                    body:
+                        JSON.stringify({
+
+                            mode:
+                                "identify",
+
+                            category:
+                                selectedCategory,
+
+                            role:
+                                selectedRole,
+
+                            imageData:
+                                imageDataURL
+
+                        })
+
                 }
             );
 
 
-        const identification =
-            extractIdentification(data);
+        const data =
+            await response.json();
 
 
-        if (!identification) {
+        if (!response.ok) {
+
+            console.error(
+                "Identification API error:",
+                data
+            );
+
+            throw new Error(
+                "Identification request failed."
+            );
+        }
+
+
+        const content =
+            data
+                ?.result
+                ?.choices?.[0]
+                ?.message
+                ?.content;
+
+
+        if (!content) {
+
+            console.error(
+                "Identification response:",
+                data
+            );
 
             throw new Error(
                 "AI returned no identification."
@@ -658,89 +586,59 @@ async function identifyItem() {
         }
 
 
-        itemType =
-            identification.itemType;
+        console.log(
+            "RAW IDENTIFICATION:",
+            content
+        );
 
-        itemIdentificationConfidence =
-            Number(
-                identification.confidence || 0
+
+        const parsed =
+            parseAIResponse(
+                content
             );
 
 
-        identificationCache = {
+        if (
+            !parsed ||
+            !parsed.itemType
+        ) {
 
-            key:
-                cacheKey,
+            throw new Error(
+                "Could not understand identification."
+            );
 
-            itemType:
-                itemType,
-
-            confidence:
-                itemIdentificationConfidence
-
-        };
+        }
 
 
-        stopLoading();
+        itemType =
+            parsed.itemType;
 
 
-        addIdentificationMessage(
-            itemType,
-            itemIdentificationConfidence
+        identificationConfidence =
+            Number(
+                parsed.confidence
+            ) || 0;
+
+
+        progressValue = 68;
+
+
+        setThinkingState(
+            "I think I found it…",
+            68
         );
 
 
         /*
-           Ask for confirmation if confidence
-           is not very high.
+           Show confirmation question.
         */
 
-        if (
-            itemIdentificationConfidence < 80
-        ) {
-
-            addChatMessage(
-                "ai",
-                identification.openingQuestion ||
-                `I think this is ${itemType}. Did I identify it correctly?`
-            );
-
-            conversation.push({
-
-                role:
-                    "assistant",
-
-                content:
-                    identification.openingQuestion ||
-                    `I think this is ${itemType}. Did I identify it correctly?`
-
-            });
-
-            return;
-        }
-
-
-        /*
-           High confidence.
-        */
-
-        conversation.push({
-
-            role:
-                "assistant",
-
-            content:
-                `I identified the item as: ${itemType}.`
-
-        });
-
-
-        await askAI();
+        showIdentificationConfirmation(
+            parsed
+        );
 
 
     } catch (error) {
-
-        stopLoading();
 
         console.error(
             "Identification error:",
@@ -748,52 +646,97 @@ async function identifyItem() {
         );
 
 
+        /*
+           Fallback.
+
+           We do NOT silently pretend
+           the item was identified.
+        */
+
+        itemType =
+            "the item in your photo";
+
+
         addChatMessage(
             "ai",
-            "I couldn't identify the item clearly enough. Tell me what it is, and I'll continue from there."
+            "I’m not completely sure what I’m looking at. What exactly is this item?"
         );
 
 
         conversation.push({
 
-            role:
-                "assistant",
+            role: "assistant",
 
             content:
-                "I couldn't identify the item clearly enough."
+                "I’m not completely sure what I’m looking at. What exactly is this item?"
 
         });
+
+
+        progressValue = 65;
+
+
+        setThinkingState(
+            "Let’s identify it together.",
+            65
+        );
+
+    } finally {
+
+        identificationBusy = false;
+
+        updateChatButton();
 
     }
 }
 
 
 /* =========================================================
-   IDENTIFICATION UI
-   ========================================================= */
+   IDENTIFICATION CONFIRMATION
+========================================================= */
 
-function addIdentificationMessage(
-    type,
-    confidence
+function showIdentificationConfirmation(
+    parsed
 ) {
 
-    const confidenceText =
-        confidence >= 85
-            ? "I'm fairly confident."
-            : confidence >= 65
-                ? "I'm reasonably confident."
-                : "I'm not completely sure.";
+    const question =
+        parsed.confirmationQuestion ||
+        `Is this a ${parsed.itemType}?`;
+
 
     addChatMessage(
         "ai",
-        `I think this is a ${type}. ${confidenceText}`
+        `I think this is a ${parsed.itemType}. ${question}`
+    );
+
+
+    conversation.push({
+
+        role: "assistant",
+
+        content:
+            `I think this is a ${parsed.itemType}. ${question}`
+
+    });
+
+
+    /*
+       The user can answer naturally.
+       We then continue the normal chat.
+    */
+
+    progressValue = 70;
+
+    setThinkingState(
+        "Identification complete.",
+        70
     );
 }
 
 
 /* =========================================================
    ASK AI
-   ========================================================= */
+========================================================= */
 
 async function askAI() {
 
@@ -805,9 +748,33 @@ async function askAI() {
     chatBusy = true;
 
 
-    startLoading(
-        "Thinking…",
-        "Choosing the next useful question"
+    const questionCount =
+        conversation.filter(
+            message =>
+                message.role === "assistant"
+        ).length;
+
+
+    const estimatedProgress =
+        Math.min(
+            70 +
+            questionCount * 5,
+            90
+        );
+
+
+    progressValue =
+        Math.max(
+            progressValue,
+            estimatedProgress
+        );
+
+
+    setThinkingState(
+        getThinkingMessage(
+            questionCount
+        ),
+        progressValue
     );
 
 
@@ -816,33 +783,71 @@ async function askAI() {
 
     try {
 
-        const data =
-            await apiRequest(
-                "chat",
+        const response =
+            await fetch(
+                API_URL,
                 {
-                    category:
-                        selectedCategory,
+                    method: "POST",
 
-                    role:
-                        selectedRole,
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-                    itemType:
-                        itemType ||
-                        "unknown item",
+                    body:
+                        JSON.stringify({
 
-                    conversation:
-                        conversation
+                            mode:
+                                "chat",
+
+                            category:
+                                selectedCategory,
+
+                            role:
+                                selectedRole,
+
+                            itemType:
+                                itemType ||
+                                "unknown item",
+
+                            confirmed:
+                                true,
+
+                            conversation:
+                                conversation
+
+                        })
+
                 }
             );
 
 
+        const data =
+            await response.json();
+
+
         removeTypingMessage();
 
-        stopLoading();
+
+        if (!response.ok) {
+
+            console.error(
+                "API error:",
+                data
+            );
+
+            throw new Error(
+                "AI request failed."
+            );
+        }
 
 
         const aiContent =
-            extractAIContent(data);
+            data
+                ?.result
+                ?.choices?.[0]
+                ?.message
+                ?.content;
 
 
         if (!aiContent) {
@@ -867,85 +872,18 @@ async function askAI() {
 
         if (!parsed) {
 
-            /*
-               If the model ignored JSON and
-               returned a plain question, keep
-               the conversation alive.
-            */
-
-            if (
-                looksLikeQuestion(
-                    aiContent
-                )
-            ) {
-
-                console.warn(
-                    "AI returned a plain question. Converting automatically."
-                );
-
-
-                const question =
-                    cleanPlainQuestion(
-                        aiContent
-                    );
-
-
-                addChatMessage(
-                    "ai",
-                    question
-                );
-
-
-                conversation.push({
-
-                    role:
-                        "assistant",
-
-                    content:
-                        question
-
-                });
-
-
-                return;
-            }
-
-
-            /*
-               If the model gave a textual
-               recommendation, do not blindly
-               throw away the conversation.
-            */
-
-            const textualResult =
-                parseTextualRecommendation(
-                    aiContent
-                );
-
-
-            if (textualResult) {
-
-                showResult(
-                    textualResult
-                );
-
-                return;
-            }
-
-
             throw new Error(
                 "Could not understand AI response."
             );
         }
 
 
-        /*
+        /* =====================================
            QUESTION
-        */
+        ===================================== */
 
         if (
-            parsed.type ===
-            "question"
+            parsed.type === "question"
         ) {
 
             const question =
@@ -955,7 +893,6 @@ async function askAI() {
 
 
             if (!question) {
-
                 throw new Error(
                     "AI returned an empty question."
                 );
@@ -979,18 +916,101 @@ async function askAI() {
             });
 
 
+            progressValue =
+                Math.min(
+                    Number(
+                        parsed.progress
+                    ) || progressValue + 5,
+                    90
+                );
+
+
+            setThinkingState(
+                "More context needed…",
+                progressValue
+            );
+
+
             return;
         }
 
 
-        /*
+        /* =====================================
            RESULT
-        */
+        ===================================== */
 
         if (
-            parsed.type ===
-            "result"
+            parsed.type === "result"
         ) {
+
+            /*
+               Extra client-side safety:
+               do not allow obviously premature
+               results.
+            */
+
+            const userAnswers =
+                conversation.filter(
+                    message =>
+                        message.role === "user"
+                );
+
+
+            if (
+                userAnswers.length < 4
+            ) {
+
+                console.warn(
+                    "AI attempted an early result. Asking for more information."
+                );
+
+
+                const fallbackQuestion =
+                    getSafetyQuestion();
+
+
+                addChatMessage(
+                    "ai",
+                    fallbackQuestion
+                );
+
+
+                conversation.push({
+
+                    role:
+                        "assistant",
+
+                    content:
+                        fallbackQuestion
+
+                });
+
+
+                progressValue =
+                    Math.max(
+                        progressValue,
+                        75
+                    );
+
+
+                setThinkingState(
+                    "I need a little more context…",
+                    progressValue
+                );
+
+
+                return;
+            }
+
+
+            progressValue = 100;
+
+
+            setThinkingState(
+                "Decision ready.",
+                100
+            );
+
 
             conversation.push({
 
@@ -998,9 +1018,7 @@ async function askAI() {
                     "assistant",
 
                 content:
-                    JSON.stringify(
-                        parsed
-                    )
+                    JSON.stringify(parsed)
 
             });
 
@@ -1023,8 +1041,6 @@ async function askAI() {
 
         removeTypingMessage();
 
-        stopLoading();
-
 
         console.error(
             "Declutter AI error:",
@@ -1034,7 +1050,7 @@ async function askAI() {
 
         addChatMessage(
             "ai",
-            "Something went wrong while talking to the AI. You can try sending your answer again."
+            "Something went wrong while talking to the AI. Please try again."
         );
 
 
@@ -1043,13 +1059,269 @@ async function askAI() {
         chatBusy = false;
 
         updateChatButton();
+
     }
 }
 
 
 /* =========================================================
+   PARSE AI RESPONSE
+========================================================= */
+
+function parseAIResponse(
+    content
+) {
+
+    if (
+        typeof content !== "string"
+    ) {
+        return null;
+    }
+
+
+    let cleaned =
+        content.trim();
+
+
+    console.log(
+        "RAW AI RESPONSE:",
+        cleaned
+    );
+
+
+    /*
+       Remove markdown fences.
+    */
+
+    cleaned =
+        cleaned
+            .replace(
+                /^```json\s*/i,
+                ""
+            )
+            .replace(
+                /^```\s*/i,
+                ""
+            )
+            .replace(
+                /\s*```$/i,
+                ""
+            )
+            .trim();
+
+
+    /*
+       Direct JSON.
+    */
+
+    try {
+
+        return JSON.parse(
+            cleaned
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Direct JSON parsing failed."
+        );
+
+    }
+
+
+    /*
+       Extract first JSON object.
+    */
+
+    const firstBrace =
+        cleaned.indexOf("{");
+
+    const lastBrace =
+        cleaned.lastIndexOf("}");
+
+
+    if (
+        firstBrace !== -1 &&
+        lastBrace !== -1 &&
+        lastBrace > firstBrace
+    ) {
+
+        const jsonPart =
+            cleaned.substring(
+                firstBrace,
+                lastBrace + 1
+            );
+
+
+        try {
+
+            return JSON.parse(
+                jsonPart
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "JSON extraction failed."
+            );
+
+        }
+    }
+
+
+    /*
+       Some free models occasionally ignore
+       the JSON instruction and return only
+       a question.
+
+       Convert a plain question into the
+       expected internal structure.
+    */
+
+    const looksLikeQuestion =
+        cleaned.endsWith("?") &&
+        cleaned.length > 5 &&
+        cleaned.length < 500;
+
+
+    if (looksLikeQuestion) {
+
+        console.warn(
+            "AI returned a plain question. Converting automatically."
+        );
+
+
+        return {
+
+            type:
+                "question",
+
+            question:
+                cleaned,
+
+            progress:
+                Math.min(
+                    85,
+                    progressValue + 5
+                )
+
+        };
+
+    }
+
+
+    /*
+       Handle a plain-text recommendation
+       as a LAST resort.
+
+       We deliberately require enough
+       conversation first.
+    */
+
+    const lower =
+        cleaned.toLowerCase();
+
+
+    const userAnswers =
+        conversation.filter(
+            message =>
+                message.role === "user"
+        );
+
+
+    if (
+        userAnswers.length >= 5
+    ) {
+
+        const recommendation =
+            detectRecommendation(
+                lower
+            );
+
+
+        if (recommendation) {
+
+            return {
+
+                type:
+                    "result",
+
+                recommendation,
+
+                confidence:
+                    70,
+
+                reasoning:
+                    cleaned,
+
+                reflection:
+                    "",
+
+                progress:
+                    100
+
+            };
+
+        }
+
+    }
+
+
+    console.error(
+        "Could not parse AI response:",
+        cleaned
+    );
+
+
+    return null;
+}
+
+
+/* =========================================================
+   DETECT RECOMMENDATION
+========================================================= */
+
+function detectRecommendation(
+    text
+) {
+
+    if (
+        /\bdiscard\b/.test(text)
+    ) {
+        return "DISCARD";
+    }
+
+    if (
+        /\brecycle\b/.test(text)
+    ) {
+        return "RECYCLE";
+    }
+
+    if (
+        /\bdonate\b/.test(text)
+    ) {
+        return "DONATE";
+    }
+
+    if (
+        /\bsell\b/.test(text)
+    ) {
+        return "SELL";
+    }
+
+    if (
+        /\bkeep\b/.test(text)
+    ) {
+        return "KEEP";
+    }
+
+    return null;
+}
+
+
+/* =========================================================
    SEND USER MESSAGE
-   ========================================================= */
+========================================================= */
 
 async function sendChatMessage() {
 
@@ -1107,474 +1379,8 @@ async function sendChatMessage() {
 
 
 /* =========================================================
-   API REQUEST
-   ========================================================= */
-
-async function apiRequest(
-    mode,
-    payload
-) {
-
-    if (currentAbortController) {
-
-        currentAbortController.abort();
-    }
-
-
-    currentAbortController =
-        new AbortController();
-
-
-    const timeout =
-        setTimeout(() => {
-
-            currentAbortController.abort();
-
-        }, REQUEST_TIMEOUT);
-
-
-    try {
-
-        const response =
-            await fetch(
-                API_URL,
-                {
-                    method:
-                        "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify({
-                            mode,
-                            ...payload
-                        }),
-
-                    signal:
-                        currentAbortController.signal
-                }
-            );
-
-
-        const data =
-            await response.json();
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                data?.error ||
-                `API error ${response.status}`
-            );
-        }
-
-
-        if (
-            data?.error
-        ) {
-
-            throw new Error(
-                data.error
-            );
-        }
-
-
-        return data;
-
-
-    } catch (error) {
-
-        if (
-            error.name ===
-            "AbortError"
-        ) {
-
-            throw new Error(
-                "The AI request took too long."
-            );
-        }
-
-
-        throw error;
-
-
-    } finally {
-
-        clearTimeout(timeout);
-
-        currentAbortController =
-            null;
-    }
-}
-
-
-/* =========================================================
-   EXTRACT IDENTIFICATION
-   ========================================================= */
-
-function extractIdentification(
-    data
-) {
-
-    const content =
-        extractAIContent(
-            data
-        );
-
-
-    if (!content) {
-        return null;
-    }
-
-
-    const parsed =
-        parseAIResponse(
-            content
-        );
-
-
-    if (
-        parsed &&
-        parsed.itemType
-    ) {
-
-        return {
-
-            itemType:
-                String(
-                    parsed.itemType
-                ).trim(),
-
-            confidence:
-                Number(
-                    parsed.confidence || 0
-                ),
-
-            openingQuestion:
-                parsed.openingQuestion || ""
-
-        };
-    }
-
-
-    /*
-       Sometimes the identify endpoint
-       may return fields directly.
-    */
-
-    if (
-        data?.itemType
-    ) {
-
-        return {
-
-            itemType:
-                String(
-                    data.itemType
-                ).trim(),
-
-            confidence:
-                Number(
-                    data.confidence || 0
-                ),
-
-            openingQuestion:
-                data.openingQuestion || ""
-
-        };
-    }
-
-
-    return null;
-}
-
-
-/* =========================================================
-   EXTRACT OPENROUTER CONTENT
-   ========================================================= */
-
-function extractAIContent(
-    data
-) {
-
-    if (
-        typeof data ===
-        "string"
-    ) {
-        return data;
-    }
-
-
-    return (
-        data?.result
-            ?.choices?.[0]
-            ?.message
-            ?.content
-        ||
-        data?.choices?.[0]
-            ?.message
-            ?.content
-        ||
-        data?.content
-        ||
-        ""
-    );
-}
-
-
-/* =========================================================
-   PARSE AI RESPONSE
-   ========================================================= */
-
-function parseAIResponse(
-    content
-) {
-
-    if (
-        !content ||
-        typeof content !== "string"
-    ) {
-        return null;
-    }
-
-
-    let cleaned =
-        content.trim();
-
-
-    /*
-       Remove markdown fences.
-    */
-
-    cleaned =
-        cleaned
-            .replace(
-                /^```json\s*/i,
-                ""
-            )
-            .replace(
-                /^```\s*/i,
-                ""
-            )
-            .replace(
-                /\s*```$/i,
-                ""
-            )
-            .trim();
-
-
-    /*
-       Direct JSON.
-    */
-
-    try {
-
-        return JSON.parse(
-            cleaned
-        );
-
-    } catch (_) {
-
-        console.warn(
-            "Direct JSON parsing failed."
-        );
-    }
-
-
-    /*
-       Extract first JSON object.
-    */
-
-    const firstBrace =
-        cleaned.indexOf("{");
-
-    const lastBrace =
-        cleaned.lastIndexOf("}");
-
-
-    if (
-        firstBrace !== -1 &&
-        lastBrace !== -1 &&
-        lastBrace > firstBrace
-    ) {
-
-        const jsonPart =
-            cleaned.substring(
-                firstBrace,
-                lastBrace + 1
-            );
-
-
-        try {
-
-            return JSON.parse(
-                jsonPart
-            );
-
-        } catch (_) {
-
-            console.warn(
-                "JSON extraction failed."
-            );
-        }
-    }
-
-
-    return null;
-}
-
-
-/* =========================================================
-   QUESTION DETECTION
-   ========================================================= */
-
-function looksLikeQuestion(
-    text
-) {
-
-    if (!text) {
-        return false;
-    }
-
-
-    const value =
-        text.trim();
-
-
-    if (
-        value.endsWith("?")
-    ) {
-        return true;
-    }
-
-
-    const questionStarters = [
-
-        "how ",
-        "what ",
-        "when ",
-        "where ",
-        "why ",
-        "which ",
-        "do ",
-        "does ",
-        "did ",
-        "is ",
-        "are ",
-        "have ",
-        "has ",
-        "can ",
-        "would ",
-        "will "
-
-    ];
-
-
-    const lower =
-        value.toLowerCase();
-
-
-    return questionStarters.some(
-        starter =>
-            lower.startsWith(starter)
-    );
-}
-
-
-/* =========================================================
-   CLEAN PLAIN QUESTION
-   ========================================================= */
-
-function cleanPlainQuestion(
-    text
-) {
-
-    return String(
-        text
-    )
-        .replace(
-            /^["']|["']$/g,
-            ""
-        )
-        .replace(
-            /\n+/g,
-            " "
-        )
-        .trim();
-}
-
-
-/* =========================================================
-   TEXTUAL RESULT FALLBACK
-   ========================================================= */
-
-function parseTextualRecommendation(
-    text
-) {
-
-    const lower =
-        text.toLowerCase();
-
-
-    const recommendations = [
-
-        "KEEP",
-        "SELL",
-        "DONATE",
-        "DISCARD",
-        "RECYCLE"
-
-    ];
-
-
-    /*
-       We only accept a textual recommendation
-       when it is explicitly stated.
-    */
-
-    for (
-        const recommendation
-        of recommendations
-    ) {
-
-        if (
-            lower.includes(
-                recommendation.toLowerCase()
-            )
-        ) {
-
-            return {
-
-                type:
-                    "result",
-
-                recommendation:
-                    recommendation,
-
-                confidence:
-                    60,
-
-                reasoning:
-                    text.trim(),
-
-                reflection:
-                    "This recommendation was extracted from the AI's response."
-
-            };
-        }
-    }
-
-
-    return null;
-}
-
-
-/* =========================================================
    CHAT UI
-   ========================================================= */
+========================================================= */
 
 function addChatMessage(
     type,
@@ -1617,7 +1423,7 @@ function addChatMessage(
 
 /* =========================================================
    TYPING
-   ========================================================= */
+========================================================= */
 
 function addTypingMessage() {
 
@@ -1649,8 +1455,13 @@ function addTypingMessage() {
         "chat-message ai typing";
 
 
-    typing.textContent =
-        "Thinking…";
+    typing.innerHTML =
+        `
+        <span>Thinking</span>
+        <span class="typing-dots">
+            <i></i><i></i><i></i>
+        </span>
+        `;
 
 
     chatWindow.appendChild(
@@ -1661,6 +1472,10 @@ function addTypingMessage() {
     scrollChatToBottom();
 }
 
+
+/* =========================================================
+   REMOVE TYPING
+========================================================= */
 
 function removeTypingMessage() {
 
@@ -1677,8 +1492,8 @@ function removeTypingMessage() {
 
 
 /* =========================================================
-   SCROLL CHAT
-   ========================================================= */
+   SCROLL
+========================================================= */
 
 function scrollChatToBottom() {
 
@@ -1703,8 +1518,236 @@ function scrollChatToBottom() {
 
 
 /* =========================================================
+   THINKING / PROGRESS
+========================================================= */
+
+function setThinkingState(
+    message,
+    value
+) {
+
+    progressValue =
+        Math.max(
+            0,
+            Math.min(
+                100,
+                Number(value) || 0
+            )
+        );
+
+
+    const progress =
+        document.getElementById(
+            "progress"
+        );
+
+
+    if (progress) {
+
+        progress.style.width =
+            `${progressValue}%`;
+
+    }
+
+
+    const label =
+        document.getElementById(
+            "step-label"
+        );
+
+
+    if (label) {
+
+        label.textContent =
+            message;
+
+    }
+
+
+    updateThinkingIndicator(
+        message,
+        progressValue
+    );
+}
+
+
+/* =========================================================
+   THINKING INDICATOR
+========================================================= */
+
+function updateThinkingIndicator(
+    message,
+    value
+) {
+
+    let indicator =
+        document.getElementById(
+            "aiThinkingStatus"
+        );
+
+
+    if (!indicator) {
+
+        const step =
+            document.getElementById(
+                "step4"
+            );
+
+
+        if (!step) {
+            return;
+        }
+
+
+        indicator =
+            document.createElement(
+                "div"
+            );
+
+
+        indicator.id =
+            "aiThinkingStatus";
+
+
+        indicator.style.cssText =
+            `
+            margin: 18px 0;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(0,0,0,0.04);
+            font-size: 13px;
+            opacity: .85;
+            `;
+
+
+        const heading =
+            step.querySelector(
+                ".app-heading"
+            );
+
+
+        if (heading) {
+
+            heading.appendChild(
+                indicator
+            );
+
+        } else {
+
+            step.prepend(
+                indicator
+            );
+
+        }
+
+    }
+
+
+    indicator.innerHTML =
+        `
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            margin-bottom:8px;
+        ">
+            <span>${escapeHTML(message)}</span>
+            <strong>${Math.round(value)}%</strong>
+        </div>
+
+        <div style="
+            height:4px;
+            width:100%;
+            background:rgba(0,0,0,.08);
+            border-radius:999px;
+            overflow:hidden;
+        ">
+            <div style="
+                height:100%;
+                width:${value}%;
+                background:currentColor;
+                border-radius:999px;
+                transition:width .5s ease;
+            "></div>
+        </div>
+        `;
+
+}
+
+
+/* =========================================================
+   THINKING MESSAGES
+========================================================= */
+
+function getThinkingMessage(
+    questionCount
+) {
+
+    if (questionCount === 0) {
+        return "Understanding your item…";
+    }
+
+    if (questionCount === 1) {
+        return "Learning how you use it…";
+    }
+
+    if (questionCount === 2) {
+        return "Looking at what else you have…";
+    }
+
+    if (questionCount === 3) {
+        return "Understanding whether it still works for you…";
+    }
+
+    if (questionCount === 4) {
+        return "Putting the bigger picture together…";
+    }
+
+    return "Thinking about your options…";
+}
+
+
+/* =========================================================
+   SAFETY QUESTION
+========================================================= */
+
+function getSafetyQuestion() {
+
+    const questions = {
+
+        Beauty:
+            "Do you have another product that you prefer over this one?",
+
+        Clothing:
+            "If you got rid of this, do you think you would genuinely miss wearing it?",
+
+        Electronics:
+            "Do you still have a reason to keep this device instead of using another one?",
+
+        Books:
+            "Do you realistically expect to read or use this book again?",
+
+        Home:
+            "If this disappeared from your home tomorrow, would you actually notice that you needed it?",
+
+        Hobby:
+            "Do you still see yourself using this for your hobby in the future?"
+
+    };
+
+
+    return (
+        questions[
+            selectedCategory
+        ] ||
+        "If you got rid of this item, do you think you would genuinely miss having it?"
+    );
+}
+
+
+/* =========================================================
    CHAT BUTTON
-   ========================================================= */
+========================================================= */
 
 function updateChatButton() {
 
@@ -1748,8 +1791,8 @@ function updateChatButton() {
 
 
 /* =========================================================
-   INPUT RESIZE
-   ========================================================= */
+   AUTO RESIZE
+========================================================= */
 
 function autoResizeInput() {
 
@@ -1778,7 +1821,7 @@ function autoResizeInput() {
 
 /* =========================================================
    KEYBOARD
-   ========================================================= */
+========================================================= */
 
 document.addEventListener(
     "DOMContentLoaded",
@@ -1819,6 +1862,7 @@ document.addEventListener(
                     event.preventDefault();
 
                     sendChatMessage();
+
                 }
 
             }
@@ -1827,495 +1871,99 @@ document.addEventListener(
 
         updateChatButton();
 
-        injectLoadingStyles();
-
     }
 );
 
 
 /* =========================================================
-   PRODUCTION LOADING UI
-   ========================================================= */
-
-function injectLoadingStyles() {
-
-    if (
-        document.getElementById(
-            "declutterLoadingStyles"
-        )
-    ) {
-        return;
-    }
-
-
-    const style =
-        document.createElement("style");
-
-
-    style.id =
-        "declutterLoadingStyles";
-
-
-    style.textContent = `
-
-        #declutterLoader {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255,255,255,.82);
-            backdrop-filter: blur(10px);
-        }
-
-        #declutterLoader.visible {
-            display: flex;
-        }
-
-        .declutter-loader-card {
-            width: min(420px, calc(100vw - 40px));
-            padding: 28px;
-            border-radius: 22px;
-            background: white;
-            box-shadow: 0 20px 60px rgba(0,0,0,.12);
-            text-align: center;
-        }
-
-        .declutter-loader-icon {
-            width: 46px;
-            height: 46px;
-            margin: 0 auto 18px;
-            border-radius: 50%;
-            border: 4px solid rgba(0,0,0,.08);
-            border-top-color: currentColor;
-            animation: declutterSpin .8s linear infinite;
-        }
-
-        @keyframes declutterSpin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .declutter-loader-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 7px;
-        }
-
-        .declutter-loader-status {
-            font-size: 14px;
-            opacity: .65;
-            margin-bottom: 18px;
-        }
-
-        .declutter-loader-track {
-            width: 100%;
-            height: 7px;
-            border-radius: 999px;
-            background: rgba(0,0,0,.08);
-            overflow: hidden;
-        }
-
-        .declutter-loader-fill {
-            width: 5%;
-            height: 100%;
-            border-radius: inherit;
-            background: currentColor;
-            transition: width .7s ease;
-        }
-
-        .declutter-loader-percent {
-            margin-top: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            opacity: .65;
-        }
-
-        .declutter-loader-note {
-            margin-top: 13px;
-            font-size: 12px;
-            opacity: .45;
-        }
-
-    `;
-
-
-    document.head.appendChild(
-        style
-    );
-}
-
-
-/* =========================================================
-   START LOADING
-   ========================================================= */
-
-function startLoading(
-    title,
-    status
-) {
-
-    injectLoadingStyles();
-
-
-    let loader =
-        document.getElementById(
-            "declutterLoader"
-        );
-
-
-    if (!loader) {
-
-        loader =
-            document.createElement("div");
-
-        loader.id =
-            "declutterLoader";
-
-
-        loader.innerHTML = `
-
-            <div class="declutter-loader-card">
-
-                <div class="declutter-loader-icon"></div>
-
-                <div
-                    class="declutter-loader-title"
-                    id="declutterLoaderTitle"
-                >
-                </div>
-
-                <div
-                    class="declutter-loader-status"
-                    id="declutterLoaderStatus"
-                >
-                </div>
-
-                <div class="declutter-loader-track">
-
-                    <div
-                        class="declutter-loader-fill"
-                        id="declutterLoaderFill"
-                    ></div>
-
-                </div>
-
-                <div
-                    class="declutter-loader-percent"
-                    id="declutterLoaderPercent"
-                >
-                    5%
-                </div>
-
-                <div class="declutter-loader-note">
-                    This can take a little while if the AI is busy.
-                </div>
-
-            </div>
-        `;
-
-
-        document.body.appendChild(
-            loader
-        );
-    }
-
-
-    const titleElement =
-        document.getElementById(
-            "declutterLoaderTitle"
-        );
-
-    const statusElement =
-        document.getElementById(
-            "declutterLoaderStatus"
-        );
-
-
-    if (titleElement) {
-        titleElement.textContent =
-            title || "Thinking…";
-    }
-
-
-    if (statusElement) {
-        statusElement.textContent =
-            status || "Working on it";
-    }
-
-
-    loader.classList.add(
-        "visible"
-    );
-
-
-    loadingStartedAt =
-        Date.now();
-
-
-    let percentage =
-        5;
-
-
-    updateLoadingPercentage(
-        percentage
-    );
-
-
-    clearInterval(
-        loadingTimer
-    );
-
-
-    /*
-       This is intentionally an ESTIMATE.
-       It never reaches 100% until the request
-       actually finishes.
-    */
-
-    loadingTimer =
-        setInterval(() => {
-
-            const elapsed =
-                Date.now() -
-                loadingStartedAt;
-
-
-            if (elapsed < 4000) {
-                percentage = 25;
-            }
-
-            else if (elapsed < 10000) {
-                percentage = 45;
-            }
-
-            else if (elapsed < 20000) {
-                percentage = 62;
-            }
-
-            else if (elapsed < 35000) {
-                percentage = 76;
-            }
-
-            else if (elapsed < 50000) {
-                percentage = 87;
-            }
-
-            else {
-                percentage = 94;
-            }
-
-
-            updateLoadingPercentage(
-                percentage
-            );
-
-        }, 900);
-}
-
-
-/* =========================================================
-   UPDATE LOADING
-   ========================================================= */
-
-function updateLoadingPercentage(
-    percentage
-) {
-
-    const fill =
-        document.getElementById(
-            "declutterLoaderFill"
-        );
-
-    const percent =
-        document.getElementById(
-            "declutterLoaderPercent"
-        );
-
-
-    if (fill) {
-
-        fill.style.width =
-            `${percentage}%`;
-    }
-
-
-    if (percent) {
-
-        percent.textContent =
-            `${percentage}%`;
-    }
-}
-
-
-/* =========================================================
-   STOP LOADING
-   ========================================================= */
-
-function stopLoading() {
-
-    clearInterval(
-        loadingTimer
-    );
-
-
-    const loader =
-        document.getElementById(
-            "declutterLoader"
-        );
-
-
-    if (!loader) {
-        return;
-    }
-
-
-    updateLoadingPercentage(
-        100
-    );
-
-
-    setTimeout(() => {
-
-        loader.classList.remove(
-            "visible"
-        );
-
-    }, 250);
-}
-
-
-/* =========================================================
-   IMAGE CACHE KEY
-   ========================================================= */
-
-function createImageCacheKey(
-    image,
-    category,
-    role
-) {
-
-    return [
-
-        category,
-
-        role,
-
-        image.length,
-
-        image.substring(
-            image.length - 120
-        )
-
-    ].join("|");
-}
-
-
-/* =========================================================
    SHOW RESULT
-   ========================================================= */
+========================================================= */
 
 function showResult(
     result
 ) {
 
-    let recommendation =
-        String(
-            result.recommendation ||
-            "UNCERTAIN"
-        )
-            .toUpperCase()
-            .trim();
-
-
-    const allowed = [
-        "KEEP",
-        "SELL",
-        "DONATE",
-        "DISCARD",
-        "RECYCLE"
-    ];
-
-
-    if (
-        !allowed.includes(
-            recommendation
-        )
-    ) {
-
-        recommendation =
-            "UNCERTAIN";
-    }
-
-
-    const recommendationElement =
+    const recommendation =
         document.getElementById(
             "recommendation"
         );
 
 
-    const confidenceElement =
+    const confidence =
         document.getElementById(
             "confidence"
         );
 
 
-    const reasoningElement =
+    const reasoning =
         document.getElementById(
             "reasoningText"
         );
 
 
-    const reflectionElement =
+    const reflection =
         document.getElementById(
             "reflectionText"
         );
 
 
-    if (recommendationElement) {
-
-        recommendationElement.textContent =
-            recommendation.replace(
-                /_/g,
-                " "
+    const recommendationValue =
+        String(
+            result.recommendation ||
+            "UNCERTAIN"
+        )
+            .toUpperCase()
+            .replace(
+                /[^A-Z_]/g,
+                ""
             );
+
+
+    if (recommendation) {
+
+        recommendation.textContent =
+            recommendationValue
+                .replace(
+                    /_/g,
+                    " "
+                );
     }
 
 
-    if (confidenceElement) {
+    if (confidence) {
 
-        const confidence =
+        const value =
             Math.max(
                 0,
                 Math.min(
                     100,
                     Number(
-                        result.confidence || 0
-                    )
+                        result.confidence
+                    ) || 0
                 )
             );
 
 
-        confidenceElement.textContent =
-            `${Math.round(confidence)}% confidence`;
+        confidence.textContent =
+            `${value}% confidence`;
     }
 
 
-    if (reasoningElement) {
+    if (reasoning) {
 
-        reasoningElement.textContent =
+        reasoning.textContent =
             result.reasoning ||
-            "";
+            "Your answers suggest this is the most reasonable option.";
+
     }
 
 
-    if (reflectionElement) {
+    if (reflection) {
 
-        reflectionElement.textContent =
+        reflection.textContent =
             result.reflection ||
             "";
+
     }
 
 
@@ -2329,67 +1977,56 @@ function showResult(
 
         const icons = {
 
-            KEEP:
-                "♡",
+            KEEP: "♡",
 
-            SELL:
-                "↗",
+            SELL: "↗",
 
-            DONATE:
-                "♡",
+            DONATE: "♡",
 
-            DISCARD:
-                "×",
+            DISCARD: "×",
 
-            RECYCLE:
-                "↻"
+            RECYCLE: "↻"
 
         };
 
 
         icon.textContent =
             icons[
-                recommendation
+                recommendationValue
             ] || "✦";
     }
 
 
     showStep(5);
+
 }
 
 
 /* =========================================================
-   LEGACY COMPATIBILITY
-   ========================================================= */
+   OLD HTML COMPATIBILITY
+========================================================= */
 
 async function analyzeItem() {
 
-    console.log(
-        "Declutter.AI now uses adaptive chat."
-    );
+    /*
+       Kept intentionally.
+
+       The current application uses
+       the conversational AI flow.
+    */
+
+    if (!chatBusy) {
+        await askAI();
+    }
 
 }
 
 
 /* =========================================================
-   NEW ITEM
-   ========================================================= */
+   RESET
+========================================================= */
 
 function newItem() {
-
-    if (currentAbortController) {
-
-        currentAbortController.abort();
-
-        currentAbortController =
-            null;
-    }
-
-
-    clearInterval(
-        loadingTimer
-    );
-
 
     selectedCategory = "";
 
@@ -2397,39 +2034,37 @@ function newItem() {
 
     uploadedImage = null;
 
-    uploadedImageData = "";
+    imageDataURL = "";
 
     itemType = "";
 
-    itemIdentificationConfidence = 0;
+    identificationConfidence = 0;
 
     conversation = [];
 
     chatBusy = false;
 
+    identificationBusy = false;
 
-    /*
-       File.
-    */
+    progressValue = 0;
 
-    const fileInput =
+
+    const input =
         document.getElementById(
             "imageInput"
         );
 
-    if (fileInput) {
-        fileInput.value = "";
+
+    if (input) {
+        input.value = "";
     }
 
-
-    /*
-       Preview.
-    */
 
     const preview =
         document.getElementById(
             "imagePreview"
         );
+
 
     if (preview) {
 
@@ -2438,6 +2073,7 @@ function newItem() {
         preview.classList.add(
             "hidden"
         );
+
     }
 
 
@@ -2446,51 +2082,24 @@ function newItem() {
             "uploadContent"
         );
 
-    if (uploadContent) {
 
+    if (uploadContent) {
         uploadContent.classList.remove(
             "hidden"
         );
     }
 
 
-    /*
-       Buttons.
-    */
-
     const imageButton =
         document.getElementById(
             "imageContinue"
         );
 
+
     if (imageButton) {
         imageButton.disabled = true;
     }
 
-
-    const categoryButton =
-        document.getElementById(
-            "categoryContinue"
-        );
-
-    if (categoryButton) {
-        categoryButton.disabled = true;
-    }
-
-
-    const roleButton =
-        document.getElementById(
-            "roleContinue"
-        );
-
-    if (roleButton) {
-        roleButton.disabled = true;
-    }
-
-
-    /*
-       Category selection.
-    */
 
     document
         .querySelectorAll(
@@ -2505,28 +2114,44 @@ function newItem() {
         });
 
 
-    /*
-       Roles.
-    */
+    const categoryButton =
+        document.getElementById(
+            "categoryContinue"
+        );
+
+
+    if (categoryButton) {
+        categoryButton.disabled = true;
+    }
+
 
     const roles =
         document.getElementById(
             "roles"
         );
 
+
     if (roles) {
         roles.innerHTML = "";
     }
 
 
-    /*
-       Chat.
-    */
+    const roleButton =
+        document.getElementById(
+            "roleContinue"
+        );
+
+
+    if (roleButton) {
+        roleButton.disabled = true;
+    }
+
 
     const chatWindow =
         document.getElementById(
             "chatWindow"
         );
+
 
     if (chatWindow) {
         chatWindow.innerHTML = "";
@@ -2538,23 +2163,33 @@ function newItem() {
             "chatInput"
         );
 
+
     if (chatInput) {
 
         chatInput.value = "";
 
         chatInput.style.height =
             "auto";
+
     }
 
 
-    /*
-       Result.
-    */
+    const status =
+        document.getElementById(
+            "aiThinkingStatus"
+        );
+
+
+    if (status) {
+        status.remove();
+    }
+
 
     const recommendation =
         document.getElementById(
             "recommendation"
         );
+
 
     if (recommendation) {
         recommendation.textContent =
@@ -2567,6 +2202,7 @@ function newItem() {
             "confidence"
         );
 
+
     if (confidence) {
         confidence.textContent =
             "—";
@@ -2578,9 +2214,12 @@ function newItem() {
             "reasoningText"
         );
 
+
     if (reasoning) {
+
         reasoning.textContent =
             "Your reasoning will appear here.";
+
     }
 
 
@@ -2589,34 +2228,58 @@ function newItem() {
             "reflectionText"
         );
 
+
     if (reflection) {
         reflection.textContent = "";
     }
 
 
-    const loader =
-        document.getElementById(
-            "declutterLoader"
-        );
-
-    if (loader) {
-        loader.classList.remove(
-            "visible"
-        );
-    }
-
-
     showStep(1);
+
 }
 
 
 /* =========================================================
    SAVE
-   ========================================================= */
+========================================================= */
 
 function saveItem() {
 
     alert(
         "Saving items will be available in a future version."
     );
+
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeHTML(
+    value
+) {
+
+    return String(value)
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
 }
