@@ -1,5 +1,5 @@
 /* =========================================================
-   DECLUTTER.AI — CHAT ENGINE
+   DECLUTTER.AI — ADAPTIVE CHAT ENGINE
 ========================================================= */
 
 
@@ -9,6 +9,7 @@
 
 let selectedCategory = "";
 let selectedRole = "";
+
 let uploadedImage = null;
 
 let itemType = "";
@@ -38,13 +39,16 @@ function startApp() {
     const app =
         document.getElementById("app");
 
+
     if (landing) {
         landing.classList.add("hidden");
     }
 
+
     if (app) {
         app.classList.remove("hidden");
     }
+
 
     showStep(1);
 }
@@ -57,39 +61,70 @@ function startApp() {
 function previewImage(event) {
 
     const file =
-        event.target.files[0];
+        event.target.files?.[0];
+
 
     if (!file) {
         return;
     }
 
+
     uploadedImage = file;
 
+
     const preview =
-        document.getElementById("imagePreview");
+        document.getElementById(
+            "imagePreview"
+        );
+
 
     const content =
-        document.getElementById("uploadContent");
+        document.getElementById(
+            "uploadContent"
+        );
+
 
     if (preview) {
+
+        if (
+            preview.src &&
+            preview.src.startsWith("blob:")
+        ) {
+
+            URL.revokeObjectURL(
+                preview.src
+            );
+        }
+
 
         preview.src =
             URL.createObjectURL(file);
 
-        preview.classList.remove("hidden");
+
+        preview.classList.remove(
+            "hidden"
+        );
     }
+
 
     if (content) {
 
-        content.classList.add("hidden");
+        content.classList.add(
+            "hidden"
+        );
     }
 
+
     const button =
-        document.getElementById("imageContinue");
+        document.getElementById(
+            "imageContinue"
+        );
+
 
     if (button) {
 
-        button.disabled = false;
+        button.disabled =
+            false;
     }
 }
 
@@ -104,29 +139,41 @@ function showStep(step) {
         .querySelectorAll(".app-step")
         .forEach(section => {
 
-            section.classList.add("hidden");
+            section.classList.add(
+                "hidden"
+            );
 
         });
 
 
     const target =
-        document.getElementById(`step${step}`);
+        document.getElementById(
+            `step${step}`
+        );
 
 
     if (target) {
 
-        target.classList.remove("hidden");
+        target.classList.remove(
+            "hidden"
+        );
     }
 
 
     const progress =
-        document.getElementById("progress");
+        document.getElementById(
+            "progress"
+        );
 
 
     if (progress) {
 
         const percentage =
-            Math.min(step * 25, 100);
+            Math.min(
+                step * 25,
+                100
+            );
+
 
         progress.style.width =
             `${percentage}%`;
@@ -134,7 +181,9 @@ function showStep(step) {
 
 
     const label =
-        document.getElementById("step-label");
+        document.getElementById(
+            "step-label"
+        );
 
 
     if (label) {
@@ -171,15 +220,21 @@ function selectCategory(
 ) {
 
     document
-        .querySelectorAll(".category-grid button")
+        .querySelectorAll(
+            ".category-grid button"
+        )
         .forEach(btn => {
 
-            btn.classList.remove("selected");
+            btn.classList.remove(
+                "selected"
+            );
 
         });
 
 
-    button.classList.add("selected");
+    button.classList.add(
+        "selected"
+    );
 
 
     selectedCategory =
@@ -187,7 +242,9 @@ function selectCategory(
 
 
     const continueButton =
-        document.getElementById("categoryContinue");
+        document.getElementById(
+            "categoryContinue"
+        );
 
 
     if (continueButton) {
@@ -272,7 +329,9 @@ const rolesByCategory = {
 function generateRoles() {
 
     const container =
-        document.getElementById("roles");
+        document.getElementById(
+            "roles"
+        );
 
 
     if (!container) {
@@ -289,7 +348,9 @@ function generateRoles() {
 
 
     const roles =
-        rolesByCategory[selectedCategory];
+        rolesByCategory[
+            selectedCategory
+        ];
 
 
     if (!roles) {
@@ -306,7 +367,9 @@ function generateRoles() {
     roles.forEach(role => {
 
         const button =
-            document.createElement("button");
+            document.createElement(
+                "button"
+            );
 
 
         button.type =
@@ -352,15 +415,21 @@ function selectRole(
 ) {
 
     document
-        .querySelectorAll(".role-button")
+        .querySelectorAll(
+            ".role-button"
+        )
         .forEach(btn => {
 
-            btn.classList.remove("selected");
+            btn.classList.remove(
+                "selected"
+            );
 
         });
 
 
-    button.classList.add("selected");
+    button.classList.add(
+        "selected"
+    );
 
 
     selectedRole =
@@ -368,7 +437,9 @@ function selectRole(
 
 
     const continueButton =
-        document.getElementById("roleContinue");
+        document.getElementById(
+            "roleContinue"
+        );
 
 
     if (continueButton) {
@@ -380,7 +451,7 @@ function selectRole(
 
 
 /* =========================================================
-   START CHAT
+   START ADAPTIVE CHAT
 ========================================================= */
 
 async function generateQuestions() {
@@ -411,7 +482,9 @@ async function generateQuestions() {
 
 
     const chatWindow =
-        document.getElementById("chatWindow");
+        document.getElementById(
+            "chatWindow"
+        );
 
 
     if (chatWindow) {
@@ -435,6 +508,14 @@ async function generateQuestions() {
 
     showStep(4);
 
+
+    /*
+       The AI starts the conversation.
+
+       Important:
+       At this stage the Worker should eventually
+       receive the uploaded image and identify it.
+    */
 
     await askAI();
 }
@@ -507,6 +588,7 @@ async function askAI() {
                 data
             );
 
+
             throw new Error(
                 "AI request failed."
             );
@@ -527,6 +609,7 @@ async function askAI() {
                 "Empty AI response:",
                 data
             );
+
 
             throw new Error(
                 "AI returned no content."
@@ -555,7 +638,7 @@ async function askAI() {
 
 
         /* =====================================
-           AI QUESTION
+           QUESTION
         ===================================== */
 
         if (
@@ -563,7 +646,14 @@ async function askAI() {
             "question"
         ) {
 
-            if (!parsed.question) {
+            const question =
+                String(
+                    parsed.question ||
+                    ""
+                ).trim();
+
+
+            if (!question) {
 
                 throw new Error(
                     "AI question was empty."
@@ -573,7 +663,7 @@ async function askAI() {
 
             addChatMessage(
                 "ai",
-                parsed.question
+                question
             );
 
 
@@ -582,7 +672,7 @@ async function askAI() {
                 role: "assistant",
 
                 content:
-                    parsed.question
+                    question
 
             });
 
@@ -592,7 +682,57 @@ async function askAI() {
 
 
         /* =====================================
-           AI RESULT
+           ITEM IDENTIFICATION
+        ===================================== */
+
+        if (
+            parsed.type ===
+            "identification"
+        ) {
+
+            const detectedType =
+                String(
+                    parsed.itemType ||
+                    ""
+                ).trim();
+
+
+            if (
+                detectedType
+            ) {
+
+                itemType =
+                    detectedType;
+            }
+
+
+            const message =
+                parsed.question ||
+                `I think this is ${detectedType}. Is that correct?`;
+
+
+            addChatMessage(
+                "ai",
+                message
+            );
+
+
+            conversation.push({
+
+                role: "assistant",
+
+                content:
+                    message
+
+            });
+
+
+            return;
+        }
+
+
+        /* =====================================
+           RESULT
         ===================================== */
 
         if (
@@ -673,13 +813,17 @@ function parseAIResponse(content) {
 
 
     /* ==========================================
-       REMOVE MARKDOWN CODE BLOCKS
+       REMOVE MARKDOWN
     ========================================== */
 
     cleaned =
         cleaned
             .replace(
                 /^```json\s*/i,
+                ""
+            )
+            .replace(
+                /^```javascript\s*/i,
                 ""
             )
             .replace(
@@ -694,18 +838,37 @@ function parseAIResponse(content) {
 
 
     /* ==========================================
-       DIRECT JSON
+       NORMALIZE QUOTES
+    ========================================== */
+
+    cleaned =
+        cleaned
+            .replace(
+                /[“”]/g,
+                '"'
+            )
+            .replace(
+                /[‘’]/g,
+                "'"
+            );
+
+
+    /* ==========================================
+       1. DIRECT JSON
     ========================================== */
 
     try {
 
         const parsed =
-            JSON.parse(cleaned);
+            JSON.parse(
+                cleaned
+            );
 
 
         if (
             parsed &&
-            typeof parsed === "object"
+            typeof parsed ===
+            "object"
         ) {
 
             return parsed;
@@ -716,12 +879,11 @@ function parseAIResponse(content) {
         console.warn(
             "Direct JSON parsing failed."
         );
-
     }
 
 
     /* ==========================================
-       EXTRACT JSON FROM SURROUNDING TEXT
+       2. JSON INSIDE TEXT
     ========================================== */
 
     const firstBrace =
@@ -748,12 +910,15 @@ function parseAIResponse(content) {
         try {
 
             const parsed =
-                JSON.parse(jsonPart);
+                JSON.parse(
+                    jsonPart
+                );
 
 
             if (
                 parsed &&
-                typeof parsed === "object"
+                typeof parsed ===
+                "object"
             ) {
 
                 return parsed;
@@ -764,22 +929,111 @@ function parseAIResponse(content) {
             console.warn(
                 "JSON extraction failed."
             );
-
         }
-
     }
 
 
     /* ==========================================
-       PLAIN QUESTION FALLBACK
+       3. PLAIN QUESTION
     ========================================== */
 
+    const questionMark =
+        cleaned.indexOf("?");
+
+
     if (
-        cleaned.includes("?")
+        questionMark !== -1
+    ) {
+
+        let question =
+            cleaned.substring(
+                0,
+                questionMark + 1
+            ).trim();
+
+
+        question =
+            question
+                .replace(
+                    /^question\s*:\s*/i,
+                    ""
+                )
+                .replace(
+                    /^q\s*:\s*/i,
+                    ""
+                )
+                .trim();
+
+
+        if (
+            question.length > 3
+        ) {
+
+            console.warn(
+                "AI returned plain question. Converting automatically."
+            );
+
+
+            return {
+
+                type: "question",
+
+                question:
+                    question
+
+            };
+        }
+    }
+
+
+    /* ==========================================
+       4. QUESTION WITHOUT QUESTION MARK
+    ========================================== */
+
+    const questionStarters = [
+
+        "how ",
+        "what ",
+        "why ",
+        "when ",
+        "where ",
+        "which ",
+        "who ",
+        "do ",
+        "does ",
+        "did ",
+        "is ",
+        "are ",
+        "can ",
+        "could ",
+        "would ",
+        "will ",
+        "have ",
+        "has "
+
+    ];
+
+
+    const lower =
+        cleaned.toLowerCase();
+
+
+    const looksLikeQuestion =
+        questionStarters.some(
+            starter =>
+                lower.startsWith(
+                    starter
+                )
+        );
+
+
+    if (
+        looksLikeQuestion &&
+        cleaned.length > 5
     ) {
 
         console.warn(
-            "AI returned a plain question. Converting automatically."
+            "AI returned a question without JSON. Converting automatically."
         );
 
 
@@ -791,12 +1045,11 @@ function parseAIResponse(content) {
                 cleaned
 
         };
-
     }
 
 
     /* ==========================================
-       NOTHING UNDERSTOOD
+       5. NOTHING UNDERSTOOD
     ========================================== */
 
     console.error(
@@ -840,26 +1093,44 @@ async function sendChatMessage() {
     }
 
 
+    /* =====================================
+       DISPLAY USER MESSAGE
+    ===================================== */
+
     addChatMessage(
         "user",
         text
     );
 
 
+    /* =====================================
+       SAVE TO CONVERSATION
+    ===================================== */
+
     conversation.push({
 
         role: "user",
 
-        content: text
+        content:
+            text
 
     });
 
 
-    input.value = "";
+    /* =====================================
+       CLEAR INPUT
+    ===================================== */
 
+    input.value = "";
 
     autoResizeInput();
 
+    updateChatButton();
+
+
+    /* =====================================
+       ASK AI
+    ===================================== */
 
     await askAI();
 }
@@ -1134,7 +1405,9 @@ document.addEventListener(
    SHOW RESULT
 ========================================================= */
 
-function showResult(result) {
+function showResult(
+    result
+) {
 
     const recommendation =
         document.getElementById(
@@ -1206,7 +1479,6 @@ function showResult(result) {
 
             confidence.textContent =
                 "Moderate confidence";
-
         }
     }
 
@@ -1287,7 +1559,7 @@ function showResult(result) {
 async function analyzeItem() {
 
     console.log(
-        "The chat engine handles analysis automatically."
+        "The adaptive chat engine handles analysis automatically."
     );
 }
 
@@ -1311,6 +1583,10 @@ function newItem() {
     chatBusy = false;
 
 
+    /* =====================================
+       FILE INPUT
+    ===================================== */
+
     const input =
         document.getElementById(
             "imageInput"
@@ -1323,6 +1599,10 @@ function newItem() {
     }
 
 
+    /* =====================================
+       IMAGE PREVIEW
+    ===================================== */
+
     const preview =
         document.getElementById(
             "imagePreview"
@@ -1331,6 +1611,17 @@ function newItem() {
 
     if (preview) {
 
+        if (
+            preview.src &&
+            preview.src.startsWith("blob:")
+        ) {
+
+            URL.revokeObjectURL(
+                preview.src
+            );
+        }
+
+
         preview.src = "";
 
         preview.classList.add(
@@ -1338,6 +1629,10 @@ function newItem() {
         );
     }
 
+
+    /* =====================================
+       UPLOAD CONTENT
+    ===================================== */
 
     const content =
         document.getElementById(
@@ -1353,6 +1648,10 @@ function newItem() {
     }
 
 
+    /* =====================================
+       IMAGE BUTTON
+    ===================================== */
+
     const imageButton =
         document.getElementById(
             "imageContinue"
@@ -1365,6 +1664,10 @@ function newItem() {
             true;
     }
 
+
+    /* =====================================
+       CATEGORY
+    ===================================== */
 
     document
         .querySelectorAll(
@@ -1392,6 +1695,10 @@ function newItem() {
     }
 
 
+    /* =====================================
+       ROLES
+    ===================================== */
+
     const roles =
         document.getElementById(
             "roles"
@@ -1416,6 +1723,10 @@ function newItem() {
             true;
     }
 
+
+    /* =====================================
+       CHAT
+    ===================================== */
 
     const chatWindow =
         document.getElementById(
@@ -1444,6 +1755,10 @@ function newItem() {
     }
 
 
+    /* =====================================
+       ITEM CONTEXT
+    ===================================== */
+
     const confirmation =
         document.getElementById(
             "itemConfirmationText"
@@ -1456,6 +1771,10 @@ function newItem() {
             "Getting ready...";
     }
 
+
+    /* =====================================
+       RESULT
+    ===================================== */
 
     const recommendation =
         document.getElementById(
