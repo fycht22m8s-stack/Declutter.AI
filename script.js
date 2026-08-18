@@ -1,8 +1,6 @@
 /* =========================================================
-   DECLUTTER.AI — ADAPTIVE CHAT ENGINE
-   Full replacement script.js
+   DECLUTTER.AI — SMART VISUAL CHAT ENGINE
 ========================================================= */
-
 
 /* =========================================================
    GLOBAL STATE
@@ -12,17 +10,14 @@ let selectedCategory = "";
 let selectedRole = "";
 let uploadedImage = null;
 
+let imageDataUrl = "";
 let itemType = "";
+let itemConfidence = 0;
 
 let conversation = [];
 
 let chatBusy = false;
-
-let questionCount = 0;
-
-let lastAIQuestion = "";
-
-let identificationConfirmed = false;
+let identificationDone = false;
 
 
 /* =========================================================
@@ -73,6 +68,44 @@ function previewImage(event) {
 
     uploadedImage = file;
 
+    /*
+       Convert the image to a base64 data URL.
+       This is what allows the Worker / vision model
+       to actually see the uploaded image.
+    */
+
+    const reader =
+        new FileReader();
+
+    reader.onload = function () {
+
+        imageDataUrl =
+            reader.result;
+
+        console.log(
+            "Image loaded for AI:",
+            imageDataUrl.substring(0, 50) + "..."
+        );
+
+    };
+
+    reader.onerror = function (error) {
+
+        console.error(
+            "Could not read image:",
+            error
+        );
+
+        imageDataUrl = "";
+    };
+
+    reader.readAsDataURL(file);
+
+
+    /*
+       Preview
+    */
+
     const preview =
         document.getElementById(
             "imagePreview"
@@ -84,10 +117,6 @@ function previewImage(event) {
         );
 
     if (preview) {
-
-        if (preview.src) {
-            URL.revokeObjectURL(preview.src);
-        }
 
         preview.src =
             URL.createObjectURL(file);
@@ -104,6 +133,11 @@ function previewImage(event) {
         );
     }
 
+
+    /*
+       Continue button
+    */
+
     const button =
         document.getElementById(
             "imageContinue"
@@ -118,7 +152,7 @@ function previewImage(event) {
 
 
 /* =========================================================
-   STEP NAVIGATION
+   STEPS
 ========================================================= */
 
 function showStep(step) {
@@ -133,6 +167,7 @@ function showStep(step) {
 
         });
 
+
     const target =
         document.getElementById(
             `step${step}`
@@ -145,6 +180,7 @@ function showStep(step) {
         );
     }
 
+
     const progress =
         document.getElementById(
             "progress"
@@ -154,16 +190,14 @@ function showStep(step) {
 
         const percentage =
             Math.min(
-                Math.max(
-                    (step - 1) * 25,
-                    0
-                ),
+                step * 25,
                 100
             );
 
         progress.style.width =
             `${percentage}%`;
     }
+
 
     const label =
         document.getElementById(
@@ -175,6 +209,7 @@ function showStep(step) {
         label.textContent =
             `Step ${step} of 4`;
     }
+
 
     window.scrollTo({
         top: 0,
@@ -214,20 +249,21 @@ function selectCategory(
 
         });
 
-    if (button) {
 
-        button.classList.add(
-            "selected"
-        );
-    }
+    button.classList.add(
+        "selected"
+    );
+
 
     selectedCategory =
         category;
+
 
     const continueButton =
         document.getElementById(
             "categoryContinue"
         );
+
 
     if (continueButton) {
 
@@ -310,15 +346,6 @@ const rolesByCategory = {
 
 function generateRoles() {
 
-    if (!selectedCategory) {
-
-        alert(
-            "Please choose a category first."
-        );
-
-        return;
-    }
-
     const container =
         document.getElementById(
             "roles"
@@ -333,12 +360,15 @@ function generateRoles() {
         return;
     }
 
+
     container.innerHTML = "";
+
 
     const roles =
         rolesByCategory[
             selectedCategory
         ];
+
 
     if (!roles) {
 
@@ -350,16 +380,6 @@ function generateRoles() {
         return;
     }
 
-    selectedRole = "";
-
-    const roleContinue =
-        document.getElementById(
-            "roleContinue"
-        );
-
-    if (roleContinue) {
-        roleContinue.disabled = true;
-    }
 
     roles.forEach(role => {
 
@@ -377,6 +397,7 @@ function generateRoles() {
         button.className =
             "role-button";
 
+
         button.onclick = () => {
 
             selectRole(
@@ -386,11 +407,13 @@ function generateRoles() {
 
         };
 
+
         container.appendChild(
             button
         );
 
     });
+
 
     showStep(3);
 }
@@ -417,20 +440,21 @@ function selectRole(
 
         });
 
-    if (button) {
 
-        button.classList.add(
-            "selected"
-        );
-    }
+    button.classList.add(
+        "selected"
+    );
+
 
     selectedRole =
         role;
+
 
     const continueButton =
         document.getElementById(
             "roleContinue"
         );
+
 
     if (continueButton) {
 
@@ -455,6 +479,7 @@ async function generateQuestions() {
         return;
     }
 
+
     if (!selectedRole) {
 
         alert(
@@ -464,30 +489,45 @@ async function generateQuestions() {
         return;
     }
 
+
+    if (!imageDataUrl) {
+
+        alert(
+            "Please upload an image first."
+        );
+
+        showStep(1);
+
+        return;
+    }
+
+
     conversation = [];
 
     itemType = "";
 
-    questionCount = 0;
+    itemConfidence = 0;
 
-    lastAIQuestion = "";
+    identificationDone = false;
 
-    identificationConfirmed = false;
 
     const chatWindow =
         document.getElementById(
             "chatWindow"
         );
 
+
     if (chatWindow) {
 
         chatWindow.innerHTML = "";
     }
 
+
     const confirmation =
         document.getElementById(
             "itemConfirmationText"
         );
+
 
     if (confirmation) {
 
@@ -495,14 +535,210 @@ async function generateQuestions() {
             `${selectedCategory} · ${selectedRole}`;
     }
 
+
     showStep(4);
 
-    await askAI();
+
+    /*
+       First request:
+       identify the actual object from the image.
+    */
+
+    await identifyItem();
 }
 
 
 /* =========================================================
-   ASK AI
+   IDENTIFY ITEM FROM IMAGE
+========================================================= */
+
+async function identifyItem() {
+
+    if (chatBusy) {
+        return;
+    }
+
+
+    chatBusy = true;
+
+    addTypingMessage();
+
+
+    try {
+
+        const response =
+            await fetch(
+                API_URL,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        mode: "identify",
+
+                        category:
+                            selectedCategory,
+
+                        role:
+                            selectedRole,
+
+                        image:
+                            imageDataUrl
+
+                    })
+
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        removeTypingMessage();
+
+
+        if (!response.ok) {
+
+            console.error(
+                "Identification API error:",
+                data
+            );
+
+            throw new Error(
+                "Image identification failed."
+            );
+        }
+
+
+        const aiContent =
+            data
+                ?.result
+                ?.choices?.[0]
+                ?.message
+                ?.content;
+
+
+        if (!aiContent) {
+
+            throw new Error(
+                "AI returned no identification."
+            );
+        }
+
+
+        console.log(
+            "RAW IDENTIFICATION:",
+            aiContent
+        );
+
+
+        const parsed =
+            parseAIResponse(
+                aiContent
+            );
+
+
+        if (!parsed) {
+
+            throw new Error(
+                "Could not understand image identification."
+            );
+        }
+
+
+        itemType =
+            parsed.itemType ||
+            "unknown item";
+
+
+        itemConfidence =
+            Number(
+                parsed.confidence
+            ) || 0;
+
+
+        identificationDone =
+            true;
+
+
+        /*
+           Show AI's identification as the first
+           chat message.
+        */
+
+        if (parsed.openingQuestion) {
+
+            addChatMessage(
+                "ai",
+                parsed.openingQuestion
+            );
+
+
+            conversation.push({
+
+                role: "assistant",
+
+                content:
+                    parsed.openingQuestion
+
+            });
+
+        } else {
+
+            const confirmationQuestion =
+                `I think this is ${itemType}. Is that right?`;
+
+            addChatMessage(
+                "ai",
+                confirmationQuestion
+            );
+
+
+            conversation.push({
+
+                role: "assistant",
+
+                content:
+                    confirmationQuestion
+
+            });
+
+        }
+
+
+    } catch (error) {
+
+        removeTypingMessage();
+
+
+        console.error(
+            "Identification error:",
+            error
+        );
+
+
+        addChatMessage(
+            "ai",
+            "I’m having trouble identifying the item from the photo. Could you describe what it is?"
+        );
+
+    } finally {
+
+        chatBusy = false;
+
+        updateChatButton();
+    }
+}
+
+
+/* =========================================================
+   ASK AI — CHAT
 ========================================================= */
 
 async function askAI() {
@@ -511,11 +747,11 @@ async function askAI() {
         return;
     }
 
+
     chatBusy = true;
 
-    updateChatButton();
-
     addTypingMessage();
+
 
     try {
 
@@ -548,28 +784,13 @@ async function askAI() {
                             conversation
 
                     })
+
                 }
             );
 
 
-        let data = null;
-
-        try {
-
-            data =
-                await response.json();
-
-        } catch (jsonError) {
-
-            console.error(
-                "Could not read API JSON:",
-                jsonError
-            );
-
-            throw new Error(
-                "The server returned an invalid response."
-            );
-        }
+        const data =
+            await response.json();
 
 
         removeTypingMessage();
@@ -583,7 +804,6 @@ async function askAI() {
             );
 
             throw new Error(
-                data?.error ||
                 "AI request failed."
             );
         }
@@ -624,93 +844,52 @@ async function askAI() {
 
         if (!parsed) {
 
-            /*
-               Last-resort fallback.
-
-               If the AI returned plain text,
-               treat it as a conversational
-               question instead of crashing.
-            */
-
-            const plainText =
-                extractPlainAIText(
-                    aiContent
-                );
-
-            if (
-                plainText &&
-                looksLikeQuestion(
-                    plainText
-                )
-            ) {
-
-                console.warn(
-                    "AI returned a plain question. Using it as a question."
-                );
-
-                handleAIQuestion(
-                    plainText
-                );
-
-                return;
-            }
-
-
-            /*
-               Try detecting a textual
-               recommendation.
-            */
-
-            const fallbackResult =
-                parseTextualRecommendation(
-                    plainText
-                );
-
-            if (fallbackResult) {
-
-                console.warn(
-                    "AI returned a textual recommendation. Converting it automatically."
-                );
-
-                showResult(
-                    fallbackResult
-                );
-
-                return;
-            }
-
-
-            console.error(
-                "Could not parse AI response:",
-                aiContent
-            );
-
             throw new Error(
                 "Could not understand AI response."
             );
         }
 
 
-        /* =====================================
-           AI QUESTION
-        ===================================== */
+        /*
+           QUESTION
+        */
 
         if (
             parsed.type ===
             "question"
         ) {
 
-            handleAIQuestion(
+            if (!parsed.question) {
+
+                throw new Error(
+                    "AI question was empty."
+                );
+            }
+
+
+            addChatMessage(
+                "ai",
                 parsed.question
             );
+
+
+            conversation.push({
+
+                role: "assistant",
+
+                content:
+                    parsed.question
+
+            });
+
 
             return;
         }
 
 
-        /* =====================================
-           AI RESULT
-        ===================================== */
+        /*
+           RESULT
+        */
 
         if (
             parsed.type ===
@@ -728,62 +907,22 @@ async function askAI() {
 
             });
 
+
             showResult(
                 parsed
             );
+
 
             return;
         }
 
 
         /*
-           Some models may return an object
-           without the "type" field.
+           Unknown JSON shape
         */
 
-        if (
-            parsed.question
-        ) {
-
-            handleAIQuestion(
-                parsed.question
-            );
-
-            return;
-        }
-
-
-        if (
-            parsed.recommendation
-        ) {
-
-            showResult({
-
-                type: "result",
-
-                recommendation:
-                    parsed.recommendation,
-
-                confidence:
-                    parsed.confidence ||
-                    70,
-
-                reasoning:
-                    parsed.reasoning ||
-                    "Based on the information you provided.",
-
-                reflection:
-                    parsed.reflection ||
-                    ""
-
-            });
-
-            return;
-        }
-
-
         throw new Error(
-            "Unknown AI response format."
+            "Unknown AI response type."
         );
 
 
@@ -791,10 +930,12 @@ async function askAI() {
 
         removeTypingMessage();
 
+
         console.error(
             "Declutter AI error:",
             error
         );
+
 
         addChatMessage(
             "ai",
@@ -811,75 +952,6 @@ async function askAI() {
 
 
 /* =========================================================
-   HANDLE AI QUESTION
-========================================================= */
-
-function handleAIQuestion(
-    question
-) {
-
-    if (!question) {
-        return;
-    }
-
-    const cleanedQuestion =
-        String(question)
-            .trim();
-
-    if (!cleanedQuestion) {
-        return;
-    }
-
-
-    /*
-       Prevent exact duplicate questions.
-    */
-
-    if (
-        lastAIQuestion &&
-        normalizeText(
-            lastAIQuestion
-        ) ===
-        normalizeText(
-            cleanedQuestion
-        )
-    ) {
-
-        console.warn(
-            "Duplicate AI question ignored."
-        );
-
-        return;
-    }
-
-
-    lastAIQuestion =
-        cleanedQuestion;
-
-    questionCount++;
-
-
-    addChatMessage(
-        "ai",
-        cleanedQuestion
-    );
-
-
-    conversation.push({
-
-        role: "assistant",
-
-        content:
-            cleanedQuestion
-
-    });
-
-
-    updateChatButton();
-}
-
-
-/* =========================================================
    PARSE AI RESPONSE
 ========================================================= */
 
@@ -887,27 +959,17 @@ function parseAIResponse(
     content
 ) {
 
-    if (
-        content === null ||
-        content === undefined
-    ) {
-
+    if (!content) {
         return null;
     }
 
 
     let cleaned =
-        String(content)
-            .trim();
-
-
-    if (!cleaned) {
-        return null;
-    }
+        String(content).trim();
 
 
     /*
-       Remove common markdown wrappers.
+       Remove markdown code fences.
     */
 
     cleaned =
@@ -928,35 +990,14 @@ function parseAIResponse(
 
 
     /*
-       Remove accidental "JSON:" prefix.
-    */
-
-    cleaned =
-        cleaned.replace(
-            /^json\s*:/i,
-            ""
-        )
-        .trim();
-
-
-    /*
-       Direct JSON.
+       1. Direct JSON
     */
 
     try {
 
-        const direct =
-            JSON.parse(
-                cleaned
-            );
-
-        if (
-            direct &&
-            typeof direct === "object"
-        ) {
-
-            return direct;
-        }
+        return JSON.parse(
+            cleaned
+        );
 
     } catch (error) {
 
@@ -967,8 +1008,7 @@ function parseAIResponse(
 
 
     /*
-       Extract the first complete
-       JSON object from surrounding text.
+       2. Extract JSON object from text.
     */
 
     const firstBrace =
@@ -993,356 +1033,113 @@ function parseAIResponse(
 
         try {
 
-            const extracted =
-                JSON.parse(
-                    jsonPart
-                );
-
-            if (
-                extracted &&
-                typeof extracted ===
-                    "object"
-            ) {
-
-                return extracted;
-            }
+            return JSON.parse(
+                jsonPart
+            );
 
         } catch (error) {
 
-            console.error(
-                "JSON extraction failed:",
-                error
+            console.warn(
+                "JSON extraction failed."
             );
         }
     }
 
 
     /*
-       Try repairing simple JSON
-       formatting mistakes.
+       3. AI sometimes ignores the JSON instruction
+       and returns a normal question.
+
+       Instead of breaking the entire app,
+       convert that text into a question object.
     */
 
-    try {
+    const looksLikeQuestion =
+        cleaned.includes("?") ||
+        /^(how|what|when|where|why|do|does|did|is|are|have|has|would|will|can|could|which)\b/i.test(
+            cleaned
+        );
 
-        const repaired =
-            repairSimpleJSON(
-                cleaned
-            );
 
-        if (repaired) {
-            return repaired;
-        }
-
-    } catch (error) {
+    if (
+        looksLikeQuestion &&
+        cleaned.length > 3 &&
+        cleaned.length < 500
+    ) {
 
         console.warn(
-            "JSON repair failed."
+            "AI returned a plain question. Converting automatically."
         );
+
+
+        return {
+
+            type: "question",
+
+            question:
+                cleaned
+
+        };
     }
-
-
-    return null;
-}
-
-
-/* =========================================================
-   SIMPLE JSON REPAIR
-========================================================= */
-
-function repairSimpleJSON(
-    text
-) {
-
-    let candidate =
-        text.trim();
 
 
     /*
-       Extract object again.
+       4. Try to recognize a plain-text recommendation.
     */
 
-    const start =
-        candidate.indexOf("{");
-
-    const end =
-        candidate.lastIndexOf("}");
+    const upper =
+        cleaned.toUpperCase();
 
 
-    if (
-        start === -1 ||
-        end === -1
-    ) {
-
-        return null;
-    }
-
-
-    candidate =
-        candidate.substring(
-            start,
-            end + 1
-        );
-
-
-    /*
-       Remove trailing commas.
-    */
-
-    candidate =
-        candidate.replace(
-            /,\s*([}\]])/g,
-            "$1"
-        );
-
-
-    try {
-
-        return JSON.parse(
-            candidate
-        );
-
-    } catch (error) {
-
-        return null;
-    }
-}
-
-
-/* =========================================================
-   EXTRACT PLAIN AI TEXT
-========================================================= */
-
-function extractPlainAIText(
-    content
-) {
-
-    if (
-        content === null ||
-        content === undefined
-    ) {
-
-        return "";
-    }
-
-    let text =
-        String(content)
-            .trim();
-
-
-    text =
-        text
-            .replace(
-                /^```[\w-]*\s*/i,
-                ""
-            )
-            .replace(
-                /\s*```$/i,
-                ""
-            )
-            .trim();
-
-
-    return text;
-}
-
-
-/* =========================================================
-   QUESTION DETECTION
-========================================================= */
-
-function looksLikeQuestion(
-    text
-) {
-
-    if (!text) {
-        return false;
-    }
-
-    const value =
-        text.trim();
-
-
-    if (
-        value.endsWith("?")
-    ) {
-
-        return true;
-    }
-
-
-    const lower =
-        value.toLowerCase();
-
-
-    const questionStarters = [
-
-        "how ",
-        "what ",
-        "when ",
-        "where ",
-        "why ",
-        "which ",
-        "who ",
-        "is ",
-        "are ",
-        "do ",
-        "does ",
-        "did ",
-        "have ",
-        "has ",
-        "can ",
-        "could ",
-        "would ",
-        "will ",
-        "was ",
-        "were ",
-        "tell me ",
-        "how often ",
-        "how long ",
-        "how much ",
-        "how many "
-
+    const recommendations = [
+        "KEEP",
+        "SELL",
+        "DONATE",
+        "DISCARD",
+        "RECYCLE"
     ];
 
 
-    return questionStarters.some(
-        starter =>
-            lower.startsWith(
-                starter
-            )
-    );
-}
-
-
-/* =========================================================
-   TEXTUAL RECOMMENDATION PARSER
-========================================================= */
-
-function parseTextualRecommendation(
-    text
-) {
-
-    if (!text) {
-        return null;
-    }
-
-    const lower =
-        text.toLowerCase();
-
-
-    let recommendation =
-        null;
-
-
-    if (
-        /\bkeep\b/.test(
-            lower
-        ) &&
-        !/\b(shouldn't|not|don't|do not)\s+keep\b/.test(
-            lower
-        )
-    ) {
-
-        recommendation =
-            "KEEP";
-    }
-
-
-    if (
-        /\bsell\b/.test(
-            lower
-        )
-    ) {
-
-        recommendation =
-            "SELL";
-    }
-
-
-    if (
-        /\bdonate\b/.test(
-            lower
-        )
-    ) {
-
-        recommendation =
-            "DONATE";
-    }
-
-
-    if (
-        /\bdiscard\b/.test(
-            lower
-        ) ||
-        /\bthrow (it|this) away\b/.test(
-            lower
-        )
-    ) {
-
-        recommendation =
-            "DISCARD";
-    }
-
-
-    if (
-        /\brecycle\b/.test(
-            lower
-        ) ||
-        /\brecycling\b/.test(
-            lower
-        )
-    ) {
-
-        recommendation =
-            "RECYCLE";
-    }
-
-
-    if (!recommendation) {
-        return null;
-    }
-
-
-    let confidence =
-        70;
-
-
-    const percentage =
-        text.match(
-            /(\d{1,3})\s*%/
+    const foundRecommendation =
+        recommendations.find(
+            recommendation =>
+                upper.includes(
+                    recommendation
+                )
         );
 
 
-    if (percentage) {
+    if (
+        foundRecommendation &&
+        cleaned.length < 1000
+    ) {
 
-        confidence =
-            Math.min(
-                100,
-                Math.max(
-                    0,
-                    Number(
-                        percentage[1]
-                    )
-                )
-            );
+        return {
+
+            type: "result",
+
+            recommendation:
+                foundRecommendation,
+
+            confidence: 70,
+
+            reasoning:
+                cleaned,
+
+            reflection:
+                ""
+
+        };
     }
 
 
-    return {
+    console.error(
+        "Could not parse AI response:",
+        cleaned
+    );
 
-        type: "result",
 
-        recommendation,
-
-        confidence,
-
-        reasoning:
-            text,
-
-        reflection:
-            ""
-
-    };
+    return null;
 }
 
 
@@ -1408,11 +1205,9 @@ async function sendChatMessage() {
 
     autoResizeInput();
 
-    updateChatButton();
-
 
     /*
-       Ask AI.
+       Continue conversation.
     */
 
     await askAI();
@@ -1435,20 +1230,6 @@ function addChatMessage(
 
 
     if (!chatWindow) {
-
-        console.warn(
-            "Missing #chatWindow element."
-        );
-
-        return;
-    }
-
-
-    if (
-        text === null ||
-        text === undefined
-    ) {
-
         return;
     }
 
@@ -1464,7 +1245,7 @@ function addChatMessage(
 
 
     message.textContent =
-        String(text);
+        text;
 
 
     chatWindow.appendChild(
@@ -1643,27 +1424,7 @@ function autoResizeInput() {
 
 
 /* =========================================================
-   TEXT NORMALIZATION
-========================================================= */
-
-function normalizeText(
-    text
-) {
-
-    return String(
-        text || ""
-    )
-        .toLowerCase()
-        .replace(
-            /\s+/g,
-            " "
-        )
-        .trim();
-}
-
-
-/* =========================================================
-   KEYBOARD / INPUT EVENTS
+   KEYBOARD
 ========================================================= */
 
 document.addEventListener(
@@ -1697,11 +1458,6 @@ document.addEventListener(
             "keydown",
             event => {
 
-                /*
-                   Enter = send
-                   Shift + Enter = newline
-                */
-
                 if (
                     event.key ===
                     "Enter" &&
@@ -1732,11 +1488,6 @@ function showResult(
     result
 ) {
 
-    if (!result) {
-        return;
-    }
-
-
     const recommendation =
         document.getElementById(
             "recommendation"
@@ -1765,52 +1516,18 @@ function showResult(
        Recommendation
     */
 
-    let recommendationValue =
-        String(
-            result.recommendation ||
-            "UNCERTAIN"
-        )
-            .trim()
-            .toUpperCase();
-
-
-    recommendationValue =
-        recommendationValue.replace(
-            /[\s-]+/g,
-            "_"
-        );
-
-
-    const validRecommendations = [
-
-        "KEEP",
-        "SELL",
-        "DONATE",
-        "DISCARD",
-        "RECYCLE"
-
-    ];
-
-
-    if (
-        !validRecommendations.includes(
-            recommendationValue
-        )
-    ) {
-
-        recommendationValue =
-            "UNCERTAIN";
-    }
-
-
     if (recommendation) {
 
         recommendation.textContent =
-            recommendationValue
+            String(
+                result.recommendation ||
+                "UNCERTAIN"
+            )
                 .replace(
                     /_/g,
                     " "
-                );
+                )
+                .toUpperCase();
     }
 
 
@@ -1820,30 +1537,10 @@ function showResult(
 
     if (confidence) {
 
-        let value =
-            Number(
-                result.confidence
-            );
-
-
-        if (
-            !Number.isFinite(
-                value
-            )
-        ) {
-
-            value = 70;
-        }
-
-
-        value =
+        const value =
             Math.round(
-                Math.min(
-                    100,
-                    Math.max(
-                        0,
-                        value
-                    )
+                Number(
+                    result.confidence
                 )
             );
 
@@ -1861,7 +1558,7 @@ function showResult(
 
         reasoning.textContent =
             result.reasoning ||
-            "Based on the information you provided.";
+            "";
     }
 
 
@@ -1889,6 +1586,13 @@ function showResult(
 
     if (icon) {
 
+        const recommendationValue =
+            String(
+                result.recommendation ||
+                ""
+            ).toUpperCase();
+
+
         const icons = {
 
             KEEP: "♡",
@@ -1899,9 +1603,7 @@ function showResult(
 
             DISCARD: "×",
 
-            RECYCLE: "↻",
-
-            UNCERTAIN: "✦"
+            RECYCLE: "↻"
 
         };
 
@@ -1911,37 +1613,6 @@ function showResult(
                 recommendationValue
             ] || "✦";
     }
-
-
-    /*
-       Save the final AI result
-       in conversation.
-    */
-
-    conversation.push({
-
-        role: "assistant",
-
-        content:
-            JSON.stringify({
-
-                type: "result",
-
-                recommendation:
-                    recommendationValue,
-
-                confidence:
-                    result.confidence,
-
-                reasoning:
-                    result.reasoning,
-
-                reflection:
-                    result.reflection
-
-            })
-
-    });
 
 
     showStep(5);
@@ -1954,26 +1625,8 @@ function showResult(
 
 async function analyzeItem() {
 
-    /*
-       The new adaptive chat handles
-       analysis automatically.
-
-       Kept here so old HTML does not
-       throw an error.
-    */
-
-    if (
-        conversation.length === 0
-    ) {
-
-        await askAI();
-
-        return;
-    }
-
-
     console.log(
-        "The adaptive chat engine handles analysis automatically."
+        "The chat engine handles analysis automatically."
     );
 }
 
@@ -1990,21 +1643,21 @@ function newItem() {
 
     uploadedImage = null;
 
+    imageDataUrl = "";
+
     itemType = "";
+
+    itemConfidence = 0;
+
+    identificationDone = false;
 
     conversation = [];
 
     chatBusy = false;
 
-    questionCount = 0;
-
-    lastAIQuestion = "";
-
-    identificationConfirmed = false;
-
 
     /*
-       Reset file input.
+       File input
     */
 
     const input =
@@ -2020,7 +1673,7 @@ function newItem() {
 
 
     /*
-       Reset image preview.
+       Preview
     */
 
     const preview =
@@ -2031,28 +1684,6 @@ function newItem() {
 
     if (preview) {
 
-        if (
-            preview.src &&
-            preview.src.startsWith(
-                "blob:"
-            )
-        ) {
-
-            try {
-
-                URL.revokeObjectURL(
-                    preview.src
-                );
-
-            } catch (error) {
-
-                console.warn(
-                    "Could not revoke image URL."
-                );
-            }
-        }
-
-
         preview.src = "";
 
         preview.classList.add(
@@ -2062,7 +1693,7 @@ function newItem() {
 
 
     /*
-       Restore upload content.
+       Upload content
     */
 
     const content =
@@ -2080,7 +1711,7 @@ function newItem() {
 
 
     /*
-       Reset image button.
+       Image continue
     */
 
     const imageButton =
@@ -2097,7 +1728,7 @@ function newItem() {
 
 
     /*
-       Reset category buttons.
+       Categories
     */
 
     document
@@ -2113,10 +1744,6 @@ function newItem() {
         });
 
 
-    /*
-       Reset category button.
-    */
-
     const categoryButton =
         document.getElementById(
             "categoryContinue"
@@ -2131,7 +1758,7 @@ function newItem() {
 
 
     /*
-       Reset roles.
+       Roles
     */
 
     const roles =
@@ -2145,10 +1772,6 @@ function newItem() {
         roles.innerHTML = "";
     }
 
-
-    /*
-       Reset role button.
-    */
 
     const roleButton =
         document.getElementById(
@@ -2164,7 +1787,7 @@ function newItem() {
 
 
     /*
-       Reset chat.
+       Chat
     */
 
     const chatWindow =
@@ -2178,10 +1801,6 @@ function newItem() {
         chatWindow.innerHTML = "";
     }
 
-
-    /*
-       Reset chat input.
-    */
 
     const chatInput =
         document.getElementById(
@@ -2199,7 +1818,7 @@ function newItem() {
 
 
     /*
-       Reset item context.
+       Context
     */
 
     const confirmation =
@@ -2216,7 +1835,7 @@ function newItem() {
 
 
     /*
-       Reset result.
+       Result
     */
 
     const recommendation =
@@ -2271,21 +1890,6 @@ function newItem() {
     }
 
 
-    const resultIcon =
-        document.getElementById(
-            "resultIcon"
-        );
-
-
-    if (resultIcon) {
-
-        resultIcon.textContent =
-            "✦";
-    }
-
-
-    updateChatButton();
-
     showStep(1);
 }
 
@@ -2300,38 +1904,3 @@ function saveItem() {
         "Saving items will be available in a future version."
     );
 }
-
-
-/* =========================================================
-   OPTIONAL DEBUG HELPER
-========================================================= */
-
-window.DeclutterAI = {
-
-    getState() {
-
-        return {
-
-            selectedCategory,
-
-            selectedRole,
-
-            itemType,
-
-            questionCount,
-
-            conversation,
-
-            chatBusy
-
-        };
-
-    },
-
-    reset() {
-
-        newItem();
-
-    }
-
-};
