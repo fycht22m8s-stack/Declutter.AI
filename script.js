@@ -1,6 +1,6 @@
 /* =========================================================
-   DECLUTTER.AI — SMART CHAT ENGINE
-   Version 4.0
+   DECLUTTER.AI — CHAT ENGINE
+   Vision + Adaptive AI Chat
 ========================================================= */
 
 
@@ -17,6 +17,8 @@ let itemType = "";
 let conversation = [];
 
 let chatBusy = false;
+
+let declutterImageData = null;
 
 
 /* =========================================================
@@ -58,7 +60,7 @@ function startApp() {
 function previewImage(event) {
 
     const file =
-        event.target.files?.[0];
+        event.target.files[0];
 
     if (!file) {
         return;
@@ -67,31 +69,204 @@ function previewImage(event) {
     uploadedImage = file;
 
     const preview =
-        document.getElementById("imagePreview");
+        document.getElementById(
+            "imagePreview"
+        );
 
     const content =
-        document.getElementById("uploadContent");
+        document.getElementById(
+            "uploadContent"
+        );
 
     if (preview) {
 
         preview.src =
             URL.createObjectURL(file);
 
-        preview.classList.remove("hidden");
+        preview.classList.remove(
+            "hidden"
+        );
     }
 
     if (content) {
 
-        content.classList.add("hidden");
+        content.classList.add(
+            "hidden"
+        );
     }
 
     const button =
-        document.getElementById("imageContinue");
+        document.getElementById(
+            "imageContinue"
+        );
 
     if (button) {
 
-        button.disabled = false;
+        button.disabled =
+            false;
     }
+}
+
+
+/* =========================================================
+   PREPARE IMAGE FOR AI
+========================================================= */
+
+function prepareImageForAI(file) {
+
+    return new Promise(
+        (resolve, reject) => {
+
+            if (!file) {
+
+                reject(
+                    new Error(
+                        "No image selected."
+                    )
+                );
+
+                return;
+            }
+
+            const reader =
+                new FileReader();
+
+            reader.onload = event => {
+
+                const img =
+                    new Image();
+
+                img.onload = () => {
+
+                    /*
+                     * Resize large images so the request
+                     * is smaller and easier for the API
+                     * to handle.
+                     */
+
+                    const maxSize =
+                        1200;
+
+                    let width =
+                        img.width;
+
+                    let height =
+                        img.height;
+
+                    if (
+                        width > maxSize ||
+                        height > maxSize
+                    ) {
+
+                        if (
+                            width > height
+                        ) {
+
+                            height =
+                                Math.round(
+                                    height *
+                                    (
+                                        maxSize /
+                                        width
+                                    )
+                                );
+
+                            width =
+                                maxSize;
+
+                        } else {
+
+                            width =
+                                Math.round(
+                                    width *
+                                    (
+                                        maxSize /
+                                        height
+                                    )
+                                );
+
+                            height =
+                                maxSize;
+                        }
+                    }
+
+                    const canvas =
+                        document.createElement(
+                            "canvas"
+                        );
+
+                    canvas.width =
+                        width;
+
+                    canvas.height =
+                        height;
+
+                    const ctx =
+                        canvas.getContext(
+                            "2d"
+                        );
+
+                    if (!ctx) {
+
+                        reject(
+                            new Error(
+                                "Could not create image canvas."
+                            )
+                        );
+
+                        return;
+                    }
+
+                    ctx.drawImage(
+                        img,
+                        0,
+                        0,
+                        width,
+                        height
+                    );
+
+                    /*
+                     * Convert to compressed JPEG.
+                     */
+
+                    const compressed =
+                        canvas.toDataURL(
+                            "image/jpeg",
+                            0.82
+                        );
+
+                    resolve(
+                        compressed
+                    );
+                };
+
+                img.onerror = () => {
+
+                    reject(
+                        new Error(
+                            "Could not read image."
+                        )
+                    );
+                };
+
+                img.src =
+                    event.target.result;
+            };
+
+            reader.onerror = () => {
+
+                reject(
+                    new Error(
+                        "Could not load image file."
+                    )
+                );
+            };
+
+            reader.readAsDataURL(
+                file
+            );
+        }
+    );
 }
 
 
@@ -105,7 +280,9 @@ function showStep(step) {
         .querySelectorAll(".app-step")
         .forEach(section => {
 
-            section.classList.add("hidden");
+            section.classList.add(
+                "hidden"
+            );
 
         });
 
@@ -116,21 +293,21 @@ function showStep(step) {
 
     if (target) {
 
-        target.classList.remove("hidden");
+        target.classList.remove(
+            "hidden"
+        );
     }
 
     const progress =
-        document.getElementById("progress");
+        document.getElementById(
+            "progress"
+        );
 
     if (progress) {
 
-        /*
-           5 steps total.
-        */
-
         const percentage =
             Math.min(
-                ((step - 1) / 4) * 100,
+                step * 25,
                 100
             );
 
@@ -139,12 +316,14 @@ function showStep(step) {
     }
 
     const label =
-        document.getElementById("step-label");
+        document.getElementById(
+            "step-label"
+        );
 
     if (label) {
 
         label.textContent =
-            `Step ${step} of 5`;
+            `Step ${step} of 4`;
     }
 
     window.scrollTo({
@@ -279,7 +458,9 @@ const rolesByCategory = {
 function generateRoles() {
 
     const container =
-        document.getElementById("roles");
+        document.getElementById(
+            "roles"
+        );
 
     if (!container) {
 
@@ -310,9 +491,12 @@ function generateRoles() {
     roles.forEach(role => {
 
         const button =
-            document.createElement("button");
+            document.createElement(
+                "button"
+            );
 
-        button.type = "button";
+        button.type =
+            "button";
 
         button.textContent =
             role;
@@ -404,9 +588,20 @@ async function generateQuestions() {
         return;
     }
 
+    if (!uploadedImage) {
+
+        alert(
+            "Please upload an image first."
+        );
+
+        return;
+    }
+
     conversation = [];
 
     itemType = "";
+
+    declutterImageData = null;
 
     const chatWindow =
         document.getElementById(
@@ -431,7 +626,35 @@ async function generateQuestions() {
 
     showStep(4);
 
-    await askAI();
+    try {
+
+        /*
+         * Prepare the actual uploaded image.
+         */
+
+        declutterImageData =
+            await prepareImageForAI(
+                uploadedImage
+            );
+
+        /*
+         * Now ask the AI.
+         */
+
+        await askAI();
+
+    } catch (error) {
+
+        console.error(
+            "Image preparation error:",
+            error
+        );
+
+        addChatMessage(
+            "ai",
+            "I couldn't prepare the image for analysis. Please try uploading it again."
+        );
+    }
 }
 
 
@@ -464,7 +687,8 @@ async function askAI() {
 
                     body: JSON.stringify({
 
-                        mode: "chat",
+                        mode:
+                            "chat",
 
                         category:
                             selectedCategory,
@@ -476,20 +700,27 @@ async function askAI() {
                             itemType ||
                             "unknown item",
 
+                        /*
+                         * THIS IS THE IMPORTANT PART:
+                         * the actual image is sent to Worker.
+                         */
+
+                        imageData:
+                            declutterImageData ||
+                            null,
+
                         conversation:
                             conversation
 
                     })
+
                 }
             );
-
 
         const data =
             await response.json();
 
-
         removeTypingMessage();
-
 
         if (!response.ok) {
 
@@ -499,10 +730,10 @@ async function askAI() {
             );
 
             throw new Error(
+                data?.error ||
                 "AI request failed."
             );
         }
-
 
         const aiContent =
             data
@@ -510,7 +741,6 @@ async function askAI() {
                 ?.choices?.[0]
                 ?.message
                 ?.content;
-
 
         if (!aiContent) {
 
@@ -524,25 +754,17 @@ async function askAI() {
             );
         }
 
-
         console.log(
-            "RAW AI RESPONSE:",
+            "AI RAW RESPONSE:",
             aiContent
         );
-
 
         const parsed =
             parseAIResponse(
                 aiContent
             );
 
-
         if (!parsed) {
-
-            console.error(
-                "Could not parse AI response:",
-                aiContent
-            );
 
             throw new Error(
                 "Could not understand AI response."
@@ -551,7 +773,7 @@ async function askAI() {
 
 
         /* =====================================
-           QUESTION
+           AI QUESTION
         ===================================== */
 
         if (
@@ -559,33 +781,34 @@ async function askAI() {
             "question"
         ) {
 
-            if (
-                parsed.question &&
-                parsed.question.trim()
-            ) {
+            if (!parsed.question) {
 
-                addChatMessage(
-                    "ai",
-                    parsed.question
+                throw new Error(
+                    "AI returned an empty question."
                 );
-
-                conversation.push({
-
-                    role:
-                        "assistant",
-
-                    content:
-                        parsed.question
-
-                });
             }
+
+            addChatMessage(
+                "ai",
+                parsed.question
+            );
+
+            conversation.push({
+
+                role:
+                    "assistant",
+
+                content:
+                    parsed.question
+
+            });
 
             return;
         }
 
 
         /* =====================================
-           RESULT
+           AI RESULT
         ===================================== */
 
         if (
@@ -613,50 +836,9 @@ async function askAI() {
         }
 
 
-        /*
-           Some models may accidentally omit
-           "type". Try to recognize the object.
-        */
-
-        if (
-            parsed.question
-        ) {
-
-            addChatMessage(
-                "ai",
-                parsed.question
-            );
-
-            conversation.push({
-
-                role:
-                    "assistant",
-
-                content:
-                    parsed.question
-
-            });
-
-            return;
-        }
-
-
-        if (
-            parsed.recommendation
-        ) {
-
-            showResult(
-                parsed
-            );
-
-            return;
-        }
-
-
         throw new Error(
             "Unknown AI response type."
         );
-
 
     } catch (error) {
 
@@ -682,58 +864,49 @@ async function askAI() {
 
 
 /* =========================================================
-   ROBUST AI RESPONSE PARSER
+   PARSE AI RESPONSE
 ========================================================= */
 
-function parseAIResponse(content) {
+function parseAIResponse(
+    content
+) {
 
-    if (!content) {
+    if (
+        typeof content !==
+        "string"
+    ) {
+
         return null;
     }
 
-
     let cleaned =
-        String(content)
-            .trim();
+        content.trim();
 
 
     /*
-       Remove markdown code fences.
-    */
+     * Remove markdown fences.
+     */
 
     cleaned =
         cleaned
             .replace(
-                /```json/gi,
+                /^```json\s*/i,
                 ""
             )
             .replace(
-                /```javascript/gi,
+                /^```\s*/i,
                 ""
             )
             .replace(
-                /```/g,
+                /\s*```$/i,
                 ""
             )
             .trim();
 
 
     /*
-       Remove common prefixes.
-    */
-
-    cleaned =
-        cleaned
-            .replace(
-                /^json\s*/i,
-                ""
-            )
-            .trim();
-
-
-    /* =====================================================
-       1. DIRECT JSON
-    ===================================================== */
+     * Direct JSON.
+     */
 
     try {
 
@@ -749,9 +922,9 @@ function parseAIResponse(content) {
     }
 
 
-    /* =====================================================
-       2. FIND OBJECT
-    ===================================================== */
+    /*
+     * Try to locate JSON object.
+     */
 
     const firstBrace =
         cleaned.indexOf("{");
@@ -772,7 +945,6 @@ function parseAIResponse(content) {
                 lastBrace + 1
             );
 
-
         try {
 
             return JSON.parse(
@@ -781,107 +953,42 @@ function parseAIResponse(content) {
 
         } catch (error) {
 
-            console.warn(
-                "JSON object extraction failed."
+            console.error(
+                "JSON extraction failed:",
+                error
             );
         }
     }
 
 
-    /* =====================================================
-       3. FIND QUESTION MANUALLY
-    ===================================================== */
-
-    const questionMatch =
-        cleaned.match(
-            /"question"\s*:\s*"([\s\S]*?)"\s*[,}]/i
-        );
-
-
-    if (questionMatch) {
-
-        return {
-
-            type:
-                "question",
-
-            question:
-                questionMatch[1]
-                    .replace(
-                        /\\"/g,
-                        '"'
-                    )
-                    .replace(
-                        /\\n/g,
-                        " "
-                    )
-
-        };
-    }
-
-
-    /* =====================================================
-       4. FIND RESULT MANUALLY
-    ===================================================== */
-
-    const recommendationMatch =
-        cleaned.match(
-            /"recommendation"\s*:\s*"([^"]+)"/i
-        );
-
-
-    if (recommendationMatch) {
-
-        const confidenceMatch =
-            cleaned.match(
-                /"confidence"\s*:\s*(\d+(?:\.\d+)?)/i
-            );
-
-
-        const reasoningMatch =
-            cleaned.match(
-                /"reasoning"\s*:\s*"([\s\S]*?)"\s*[,}]/i
-            );
-
-
-        const reflectionMatch =
-            cleaned.match(
-                /"reflection"\s*:\s*"([\s\S]*?)"\s*[,}]/i
-            );
-
-
-        return {
-
-            type:
-                "result",
-
-            recommendation:
-                recommendationMatch[1],
-
-            confidence:
-                confidenceMatch
-                    ? Number(
-                        confidenceMatch[1]
-                    )
-                    : 50,
-
-            reasoning:
-                reasoningMatch
-                    ? reasoningMatch[1]
-                    : "",
-
-            reflection:
-                reflectionMatch
-                    ? reflectionMatch[1]
-                    : ""
-
-        };
-    }
-
-
     /*
-       Nothing worked.
-    */
+     * Last attempt:
+     * sometimes models return JSON with
+     * accidental leading/trailing text.
+     */
+
+    try {
+
+        const match =
+            cleaned.match(
+                /\{[\s\S]*\}/
+            );
+
+        if (match) {
+
+            return JSON.parse(
+                match[0]
+            );
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Final JSON parsing failed:",
+            error
+        );
+    }
+
 
     return null;
 }
@@ -897,30 +1004,26 @@ async function sendChatMessage() {
         return;
     }
 
-
     const input =
         document.getElementById(
             "chatInput"
         );
 
-
     if (!input) {
         return;
     }
 
-
     const text =
         input.value.trim();
-
 
     if (!text) {
         return;
     }
 
 
-    /* =====================================
-       DISPLAY USER MESSAGE
-    ===================================== */
+    /*
+     * Display user message.
+     */
 
     addChatMessage(
         "user",
@@ -928,9 +1031,9 @@ async function sendChatMessage() {
     );
 
 
-    /* =====================================
-       ADD TO CONVERSATION
-    ===================================== */
+    /*
+     * Save user message.
+     */
 
     conversation.push({
 
@@ -943,9 +1046,9 @@ async function sendChatMessage() {
     });
 
 
-    /* =====================================
-       CLEAR INPUT
-    ===================================== */
+    /*
+     * Clear input.
+     */
 
     input.value = "";
 
@@ -954,9 +1057,10 @@ async function sendChatMessage() {
     updateChatButton();
 
 
-    /* =====================================
-       ASK AI
-    ===================================== */
+    /*
+     * Ask AI for the next
+     * personalized question.
+     */
 
     await askAI();
 }
@@ -976,30 +1080,24 @@ function addChatMessage(
             "chatWindow"
         );
 
-
     if (!chatWindow) {
         return;
     }
-
 
     const message =
         document.createElement(
             "div"
         );
 
-
     message.className =
         `chat-message ${type}`;
 
-
     message.textContent =
-        String(text);
-
+        text;
 
     chatWindow.appendChild(
         message
     );
-
 
     scrollChatToBottom();
 }
@@ -1016,37 +1114,29 @@ function addTypingMessage() {
             "chatWindow"
         );
 
-
     if (!chatWindow) {
         return;
     }
 
-
     removeTypingMessage();
-
 
     const typing =
         document.createElement(
             "div"
         );
 
-
     typing.id =
         "typingMessage";
-
 
     typing.className =
         "chat-message ai typing";
 
-
     typing.textContent =
         "Thinking…";
-
 
     chatWindow.appendChild(
         typing
     );
-
 
     scrollChatToBottom();
 }
@@ -1062,7 +1152,6 @@ function removeTypingMessage() {
         document.getElementById(
             "typingMessage"
         );
-
 
     if (typing) {
 
@@ -1082,11 +1171,9 @@ function scrollChatToBottom() {
             "chatWindow"
         );
 
-
     if (!chatWindow) {
         return;
     }
-
 
     requestAnimationFrame(() => {
 
@@ -1108,17 +1195,14 @@ function updateChatButton() {
             "chatSend"
         );
 
-
     const input =
         document.getElementById(
             "chatInput"
         );
 
-
     if (!button) {
         return;
     }
-
 
     if (chatBusy) {
 
@@ -1131,11 +1215,9 @@ function updateChatButton() {
         return;
     }
 
-
     button.disabled =
         !input ||
         !input.value.trim();
-
 
     button.textContent =
         "Send →";
@@ -1153,15 +1235,12 @@ function autoResizeInput() {
             "chatInput"
         );
 
-
     if (!input) {
         return;
     }
 
-
     input.style.height =
         "auto";
-
 
     input.style.height =
         `${Math.min(
@@ -1184,11 +1263,9 @@ document.addEventListener(
                 "chatInput"
             );
 
-
         if (!input) {
             return;
         }
-
 
         input.addEventListener(
             "input",
@@ -1201,10 +1278,14 @@ document.addEventListener(
             }
         );
 
-
         input.addEventListener(
             "keydown",
             event => {
+
+                /*
+                 * Enter = send
+                 * Shift + Enter = new line
+                 */
 
                 if (
                     event.key ===
@@ -1221,7 +1302,6 @@ document.addEventListener(
             }
         );
 
-
         updateChatButton();
 
     }
@@ -1232,25 +1312,24 @@ document.addEventListener(
    SHOW RESULT
 ========================================================= */
 
-function showResult(result) {
+function showResult(
+    result
+) {
 
     const recommendation =
         document.getElementById(
             "recommendation"
         );
 
-
     const confidence =
         document.getElementById(
             "confidence"
         );
 
-
     const reasoning =
         document.getElementById(
             "reasoningText"
         );
-
 
     const reflection =
         document.getElementById(
@@ -1258,9 +1337,9 @@ function showResult(result) {
         );
 
 
-    /* =====================================
-       RECOMMENDATION
-    ===================================== */
+    /*
+     * Recommendation
+     */
 
     if (recommendation) {
 
@@ -1277,44 +1356,34 @@ function showResult(result) {
     }
 
 
-    /* =====================================
-       CONFIDENCE
-    ===================================== */
+    /*
+     * Confidence
+     */
 
     if (confidence) {
 
-        let value =
+        const rawConfidence =
             Number(
                 result.confidence
             );
 
-
-        if (
-            !Number.isFinite(value)
-        ) {
-
-            value = 50;
-        }
-
-
-        value =
-            Math.max(
-                0,
-                Math.min(
-                    100,
-                    Math.round(value)
+        const value =
+            Number.isFinite(
+                rawConfidence
+            )
+                ? Math.round(
+                    rawConfidence
                 )
-            );
-
+                : 0;
 
         confidence.textContent =
             `${value}% confidence`;
     }
 
 
-    /* =====================================
-       REASONING
-    ===================================== */
+    /*
+     * Reasoning
+     */
 
     if (reasoning) {
 
@@ -1324,9 +1393,9 @@ function showResult(result) {
     }
 
 
-    /* =====================================
-       REFLECTION
-    ===================================== */
+    /*
+     * Reflection
+     */
 
     if (reflection) {
 
@@ -1336,15 +1405,14 @@ function showResult(result) {
     }
 
 
-    /* =====================================
-       ICON
-    ===================================== */
+    /*
+     * Result icon
+     */
 
     const icon =
         document.getElementById(
             "resultIcon"
         );
-
 
     if (icon) {
 
@@ -1370,13 +1438,7 @@ function showResult(result) {
                 "×",
 
             RECYCLE:
-                "↻",
-
-            STORE:
-                "□",
-
-            UNCERTAIN:
-                "✦"
+                "↻"
 
         };
 
@@ -1399,12 +1461,12 @@ function showResult(result) {
 async function analyzeItem() {
 
     /*
-       Kept for compatibility with
-       old HTML.
-    */
+     * Kept so old HTML references
+     * do not cause errors.
+     */
 
     console.log(
-        "The chat engine handles analysis automatically."
+        "The new chat engine handles analysis automatically."
     );
 }
 
@@ -1427,16 +1489,17 @@ function newItem() {
 
     chatBusy = false;
 
+    declutterImageData = null;
 
-    /* =====================================
-       FILE INPUT
-    ===================================== */
+
+    /*
+     * Reset file input.
+     */
 
     const input =
         document.getElementById(
             "imageInput"
         );
-
 
     if (input) {
 
@@ -1444,15 +1507,14 @@ function newItem() {
     }
 
 
-    /* =====================================
-       IMAGE PREVIEW
-    ===================================== */
+    /*
+     * Reset image preview.
+     */
 
     const preview =
         document.getElementById(
             "imagePreview"
         );
-
 
     if (preview) {
 
@@ -1464,15 +1526,14 @@ function newItem() {
     }
 
 
-    /* =====================================
-       UPLOAD CONTENT
-    ===================================== */
+    /*
+     * Restore upload content.
+     */
 
     const content =
         document.getElementById(
             "uploadContent"
         );
-
 
     if (content) {
 
@@ -1482,15 +1543,14 @@ function newItem() {
     }
 
 
-    /* =====================================
-       IMAGE BUTTON
-    ===================================== */
+    /*
+     * Reset image button.
+     */
 
     const imageButton =
         document.getElementById(
             "imageContinue"
         );
-
 
     if (imageButton) {
 
@@ -1499,9 +1559,9 @@ function newItem() {
     }
 
 
-    /* =====================================
-       CATEGORY
-    ===================================== */
+    /*
+     * Reset category buttons.
+     */
 
     document
         .querySelectorAll(
@@ -1516,11 +1576,14 @@ function newItem() {
         });
 
 
+    /*
+     * Reset category continue.
+     */
+
     const categoryButton =
         document.getElementById(
             "categoryContinue"
         );
-
 
     if (categoryButton) {
 
@@ -1529,15 +1592,14 @@ function newItem() {
     }
 
 
-    /* =====================================
-       ROLES
-    ===================================== */
+    /*
+     * Reset roles.
+     */
 
     const roles =
         document.getElementById(
             "roles"
         );
-
 
     if (roles) {
 
@@ -1550,7 +1612,6 @@ function newItem() {
             "roleContinue"
         );
 
-
     if (roleButton) {
 
         roleButton.disabled =
@@ -1558,15 +1619,14 @@ function newItem() {
     }
 
 
-    /* =====================================
-       CHAT
-    ===================================== */
+    /*
+     * Reset chat.
+     */
 
     const chatWindow =
         document.getElementById(
             "chatWindow"
         );
-
 
     if (chatWindow) {
 
@@ -1574,11 +1634,14 @@ function newItem() {
     }
 
 
+    /*
+     * Reset chat input.
+     */
+
     const chatInput =
         document.getElementById(
             "chatInput"
         );
-
 
     if (chatInput) {
 
@@ -1589,15 +1652,14 @@ function newItem() {
     }
 
 
-    /* =====================================
-       ITEM CONTEXT
-    ===================================== */
+    /*
+     * Reset item context.
+     */
 
     const confirmation =
         document.getElementById(
             "itemConfirmationText"
         );
-
 
     if (confirmation) {
 
@@ -1606,15 +1668,14 @@ function newItem() {
     }
 
 
-    /* =====================================
-       RESULT
-    ===================================== */
+    /*
+     * Reset result.
+     */
 
     const recommendation =
         document.getElementById(
             "recommendation"
         );
-
 
     if (recommendation) {
 
@@ -1628,7 +1689,6 @@ function newItem() {
             "confidence"
         );
 
-
     if (confidence) {
 
         confidence.textContent =
@@ -1641,7 +1701,6 @@ function newItem() {
             "reasoningText"
         );
 
-
     if (reasoning) {
 
         reasoning.textContent =
@@ -1653,7 +1712,6 @@ function newItem() {
         document.getElementById(
             "reflectionText"
         );
-
 
     if (reflection) {
 
