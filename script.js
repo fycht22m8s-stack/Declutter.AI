@@ -1,6 +1,7 @@
 /* =========================================================
-   DECLUTTER.AI — FINAL CHAT + IMAGE ENGINE
+   DECLUTTER.AI — FINAL CHAT ENGINE
 ========================================================= */
+
 
 /* =========================================================
    GLOBAL STATE
@@ -8,22 +9,21 @@
 
 let selectedCategory = "";
 let selectedRole = "";
+
 let uploadedImage = null;
 let uploadedImageData = "";
 
 let itemType = "";
-let itemIdentificationConfidence = 0;
 
 let conversation = [];
 
-let chatBusy = false;
-let identificationBusy = false;
-
 let questionCount = 0;
-let maxQuestions = 7;
 
-let waitingTimer = null;
-let waitingStartedAt = null;
+let chatBusy = false;
+
+let currentStep = 1;
+
+let loadingTimer = null;
 
 
 /* =========================================================
@@ -59,112 +59,158 @@ function startApp() {
 
 
 /* =========================================================
-   IMAGE PREVIEW + BASE64
+   IMAGE PREVIEW
 ========================================================= */
 
 function previewImage(event) {
 
     const file =
-        event.target.files &&
-        event.target.files[0];
+        event?.target?.files?.[0];
 
     if (!file) {
         return;
     }
 
-    uploadedImage = file;
+    uploadedImage =
+        file;
+
 
     const preview =
-        document.getElementById("imagePreview");
+        document.getElementById(
+            "imagePreview"
+        );
 
     const content =
-        document.getElementById("uploadContent");
+        document.getElementById(
+            "uploadContent"
+        );
+
 
     if (preview) {
 
         const objectURL =
             URL.createObjectURL(file);
 
-        preview.src = objectURL;
+        preview.src =
+            objectURL;
 
-        preview.classList.remove("hidden");
+        preview.classList.remove(
+            "hidden"
+        );
     }
+
 
     if (content) {
-        content.classList.add("hidden");
+
+        content.classList.add(
+            "hidden"
+        );
     }
+
 
     const button =
-        document.getElementById("imageContinue");
+        document.getElementById(
+            "imageContinue"
+        );
+
 
     if (button) {
-        button.disabled = false;
+
+        button.disabled =
+            false;
     }
 
+
     /*
-       Convert image to base64.
-       This is IMPORTANT because the Worker
-       needs the actual image data.
+       Convert image to base64
+       so Worker can send it to
+       the vision model.
     */
 
     const reader =
         new FileReader();
 
-    reader.onload = () => {
 
-        uploadedImageData =
-            reader.result || "";
+    reader.onload =
+        function () {
 
-        console.log(
-            "Image loaded for AI:",
-            uploadedImageData.substring(0, 80) + "..."
-        );
-    };
+            uploadedImageData =
+                reader.result;
 
-    reader.onerror = () => {
+            console.log(
+                "Image loaded for AI:",
+                uploadedImageData.slice(
+                    0,
+                    80
+                ) + "..."
+            );
+        };
 
-        uploadedImageData = "";
 
-        console.error(
-            "Could not read image."
-        );
-    };
+    reader.onerror =
+        function () {
+
+            console.error(
+                "Could not read image."
+            );
+
+            uploadedImageData =
+                "";
+        };
+
 
     reader.readAsDataURL(file);
 }
 
 
 /* =========================================================
-   STEP SYSTEM
+   STEPS
 ========================================================= */
 
 function showStep(step) {
 
+    currentStep =
+        step;
+
+
     document
-        .querySelectorAll(".app-step")
+        .querySelectorAll(
+            ".app-step"
+        )
         .forEach(section => {
 
-            section.classList.add("hidden");
+            section.classList.add(
+                "hidden"
+            );
 
         });
+
 
     const target =
         document.getElementById(
             `step${step}`
         );
 
+
     if (target) {
-        target.classList.remove("hidden");
+
+        target.classList.remove(
+            "hidden"
+        );
     }
 
+
     const progress =
-        document.getElementById("progress");
+        document.getElementById(
+            "progress"
+        );
+
 
     if (progress) {
 
         const percentage =
             Math.min(
-                ((step - 1) / 4) * 100,
+                step * 25,
                 100
             );
 
@@ -172,14 +218,19 @@ function showStep(step) {
             `${percentage}%`;
     }
 
+
     const label =
-        document.getElementById("step-label");
+        document.getElementById(
+            "step-label"
+        );
+
 
     if (label) {
 
         label.textContent =
             `Step ${step} of 4`;
     }
+
 
     window.scrollTo({
         top: 0,
@@ -215,18 +266,26 @@ function selectCategory(
 
         });
 
-    button.classList.add("selected");
+
+    button.classList.add(
+        "selected"
+    );
+
 
     selectedCategory =
         category;
+
 
     const continueButton =
         document.getElementById(
             "categoryContinue"
         );
 
+
     if (continueButton) {
-        continueButton.disabled = false;
+
+        continueButton.disabled =
+            false;
     }
 }
 
@@ -304,57 +363,72 @@ const rolesByCategory = {
 
 function generateRoles() {
 
-    const container =
-        document.getElementById("roles");
-
-    if (!container) {
-        console.error(
-            "Missing #roles element."
-        );
+    if (!selectedCategory) {
         return;
     }
 
-    container.innerHTML = "";
+
+    const container =
+        document.getElementById(
+            "roles"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    container.innerHTML =
+        "";
+
 
     const roles =
         rolesByCategory[
             selectedCategory
+        ] || [
+            "Everyday",
+            "Occasional",
+            "Sentimental",
+            "Other"
         ];
 
-    if (!roles) {
-        console.error(
-            "No roles found for:",
-            selectedCategory
-        );
-        return;
-    }
 
     roles.forEach(role => {
 
         const button =
-            document.createElement("button");
+            document.createElement(
+                "button"
+            );
 
-        button.type = "button";
 
-        button.textContent = role;
+        button.type =
+            "button";
+
+        button.textContent =
+            role;
 
         button.className =
             "role-button";
 
-        button.onclick = () => {
 
-            selectRole(
-                button,
-                role
-            );
+        button.onclick =
+            () => {
 
-        };
+                selectRole(
+                    button,
+                    role
+                );
+
+            };
+
 
         container.appendChild(
             button
         );
 
     });
+
 
     showStep(3);
 }
@@ -381,18 +455,26 @@ function selectRole(
 
         });
 
-    button.classList.add("selected");
+
+    button.classList.add(
+        "selected"
+    );
+
 
     selectedRole =
         role;
+
 
     const continueButton =
         document.getElementById(
             "roleContinue"
         );
 
+
     if (continueButton) {
-        continueButton.disabled = false;
+
+        continueButton.disabled =
+            false;
     }
 }
 
@@ -412,74 +494,114 @@ async function generateQuestions() {
         return;
     }
 
+
     if (!selectedRole) {
 
         alert(
-            "Please choose the role of the item first."
+            "Please choose the role first."
         );
 
         return;
     }
 
-    if (!uploadedImageData) {
 
-        alert(
-            "Please upload an image first."
-        );
+    conversation =
+        [];
 
-        return;
-    }
+    itemType =
+        "";
 
-    conversation = [];
+    questionCount =
+        0;
 
-    itemType = "";
-
-    questionCount = 0;
 
     const chatWindow =
         document.getElementById(
             "chatWindow"
         );
 
+
     if (chatWindow) {
-        chatWindow.innerHTML = "";
+
+        chatWindow.innerHTML =
+            "";
     }
+
 
     const confirmation =
         document.getElementById(
             "itemConfirmationText"
         );
 
+
     if (confirmation) {
 
         confirmation.textContent =
-            "Identifying your item…";
+            `${selectedCategory} · ${selectedRole}`;
     }
+
 
     showStep(4);
 
+
     /*
-       FIRST:
-       identify the actual object from image.
+       Wait until FileReader has finished.
     */
+
+    if (
+        uploadedImage &&
+        !uploadedImageData
+    ) {
+
+        setLoadingStatus(
+            "Preparing your image..."
+        );
+
+        await waitForImage();
+    }
+
 
     await identifyItem();
+}
 
-    /*
-       THEN:
-       start adaptive conversation.
-    */
 
-    if (itemType) {
+/* =========================================================
+   WAIT FOR IMAGE
+========================================================= */
 
-        if (confirmation) {
+function waitForImage() {
 
-            confirmation.textContent =
-                `${itemType} · ${selectedCategory} · ${selectedRole}`;
+    return new Promise(
+        resolve => {
+
+            let attempts =
+                0;
+
+
+            const timer =
+                setInterval(
+                    () => {
+
+                        attempts++;
+
+
+                        if (
+                            uploadedImageData ||
+                            attempts > 50
+                        ) {
+
+                            clearInterval(
+                                timer
+                            );
+
+                            resolve();
+                        }
+
+                    },
+                    100
+                );
         }
-
-        await askAI();
-    }
+    );
 }
 
 
@@ -489,146 +611,108 @@ async function generateQuestions() {
 
 async function identifyItem() {
 
-    if (identificationBusy) {
-        return;
-    }
-
-    identificationBusy = true;
-
-    startWaitingIndicator(
-        "Looking closely at your item…"
+    setLoadingStatus(
+        "Looking closely at your item..."
     );
+
 
     try {
 
-        const response =
-            await fetch(
-                API_URL,
+        const data =
+            await apiRequest(
                 {
-                    method: "POST",
+                    mode: "identify",
 
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
+                    category:
+                        selectedCategory,
 
-                    body: JSON.stringify({
+                    role:
+                        selectedRole,
 
-                        mode: "identify",
+                    image:
+                        uploadedImageData
 
-                        category:
-                            selectedCategory,
-
-                        role:
-                            selectedRole,
-
-                        image:
-                            uploadedImageData,
-
-                        description:
-                            ""
-
-                    })
-                }
+                },
+                true
             );
 
-        const data =
-            await response.json();
+
+        const aiContent =
+            extractAIContent(
+                data
+            );
+
 
         console.log(
             "RAW IDENTIFICATION:",
-            data
-                ?.result
-                ?.choices?.[0]
-                ?.message
-                ?.content
+            aiContent
         );
 
-        if (!response.ok) {
-
-            throw new Error(
-                "Identification request failed."
-            );
-        }
-
-        const content =
-            data
-                ?.result
-                ?.choices?.[0]
-                ?.message
-                ?.content;
-
-        if (!content) {
-
-            throw new Error(
-                "AI returned no identification."
-            );
-        }
 
         const parsed =
             parseAIResponse(
-                content
+                aiContent,
+                "identification"
             );
 
-        if (!parsed) {
+
+        if (
+            !parsed ||
+            parsed.type !==
+            "identification"
+        ) {
 
             throw new Error(
                 "Could not understand identification."
             );
         }
 
+
+        itemType =
+            parsed.itemType ||
+            "unknown item";
+
+
+        console.log(
+            "Identified item:",
+            itemType,
+            "confidence:",
+            parsed.confidence
+        );
+
+
         /*
-           Sometimes the AI may accidentally
-           return a question.
+           Add identification to chat.
         */
 
-        if (
-            parsed.type === "question" &&
-            !parsed.itemType
-        ) {
+        const opening =
+            parsed.openingQuestion ||
+            `I think this is a ${itemType}. Is that right?`;
 
-            console.warn(
-                "AI asked a question instead of identifying."
-            );
 
-            /*
-               Do not completely break the app.
-               Use category as temporary context.
-            */
-
-            itemType =
-                categoryFallback(
-                    selectedCategory
-                );
-
-            return;
-        }
-
-        if (parsed.itemType) {
-
-            itemType =
-                String(
-                    parsed.itemType
-                ).trim();
-
-            itemIdentificationConfidence =
-                Number(
-                    parsed.confidence || 0
-                );
-
-            console.log(
-                "Identified item:",
-                itemType,
-                "confidence:",
-                itemIdentificationConfidence
-            );
-
-            return;
-        }
-
-        throw new Error(
-            "AI returned no item type."
+        addChatMessage(
+            "ai",
+            `I think this is a ${itemType}. ${opening}`
         );
+
+
+        conversation.push({
+
+            role: "assistant",
+
+            content:
+                `I think this is a ${itemType}. ${opening}`
+
+        });
+
+
+        /*
+           We don't count confirmation
+           as a real decision question.
+        */
+
+        return;
+
 
     } catch (error) {
 
@@ -637,47 +721,32 @@ async function identifyItem() {
             error
         );
 
+
         /*
-           Do NOT stop the entire app.
-           We can still use the category and
-           ask the user about the object.
+           Even if identification fails,
+           allow the user to continue.
         */
 
         itemType =
-            categoryFallback(
-                selectedCategory
-            );
+            "the item shown in the photo";
 
-    } finally {
 
-        identificationBusy = false;
+        addChatMessage(
+            "ai",
+            "I couldn't identify the item with enough confidence. Tell me what it is, and I'll take it from there."
+        );
 
-        stopWaitingIndicator();
+
+        conversation.push({
+
+            role: "assistant",
+
+            content:
+                "I couldn't identify the item with enough confidence. Tell me what it is, and I'll take it from there."
+
+        });
+
     }
-}
-
-
-/* =========================================================
-   FALLBACK ITEM TYPE
-========================================================= */
-
-function categoryFallback(category) {
-
-    const fallback = {
-
-        Clothing: "clothing item",
-        Electronics: "electronic device",
-        Books: "book",
-        Beauty: "beauty product",
-        Home: "home item",
-        Hobby: "hobby item"
-
-    };
-
-    return (
-        fallback[category] ||
-        "physical item"
-    );
 }
 
 
@@ -691,185 +760,199 @@ async function askAI() {
         return;
     }
 
-    chatBusy = true;
 
-    startWaitingIndicator(
-        questionCount === 0
-            ? "Thinking about the best questions…"
-            : "Thinking about your answer…"
+    chatBusy =
+        true;
+
+
+    setLoadingStatus(
+        getThinkingStatus()
     );
+
 
     try {
 
-        /*
-           Safety limit:
-           AI should normally decide within
-           5–7 questions.
-        */
-
-        if (
-            questionCount >= maxQuestions
-        ) {
-
-            await requestFinalDecision();
-
-            return;
-        }
-
-        const response =
-            await fetch(
-                API_URL,
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify({
-
-                        mode: "chat",
-
-                        category:
-                            selectedCategory,
-
-                        role:
-                            selectedRole,
-
-                        itemType:
-                            itemType,
-
-                        image:
-                            uploadedImageData,
-
-                        conversation:
-                            conversation,
-
-                        questionCount:
-                            questionCount
-
-                    })
-                }
-            );
-
         const data =
-            await response.json();
+            await apiRequest(
+                {
+                    mode: "chat",
 
-        if (!response.ok) {
+                    category:
+                        selectedCategory,
 
-            throw new Error(
-                "AI request failed."
+                    role:
+                        selectedRole,
+
+                    itemType:
+                        itemType ||
+                        "unknown item",
+
+                    questionCount:
+                        questionCount,
+
+                    conversation:
+                        conversation
+
+                },
+                false
             );
-        }
+
 
         const aiContent =
-            data
-                ?.result
-                ?.choices?.[0]
-                ?.message
-                ?.content;
+            extractAIContent(
+                data
+            );
+
 
         console.log(
             "RAW AI RESPONSE:",
             aiContent
         );
 
-        if (!aiContent) {
-
-            throw new Error(
-                "AI returned no content."
-            );
-        }
 
         const parsed =
             parseAIResponse(
-                aiContent
+                aiContent,
+                "chat"
             );
+
 
         if (!parsed) {
 
-            /*
-               Retry once if the AI returned
-               malformed output.
-            */
-
-            console.warn(
-                "Could not parse AI response. Retrying…"
+            throw new Error(
+                "Could not understand AI response."
             );
-
-            await retryAI();
-
-            return;
         }
 
-        /*
-           QUESTION
-        */
+
+        /* =========================================
+           MESSAGE
+        ========================================= */
 
         if (
-            parsed.type === "question"
+            parsed.type ===
+            "message"
         ) {
 
-            if (!parsed.question) {
+            const question =
+                String(
+                    parsed.question ||
+                    ""
+                ).trim();
+
+
+            const text =
+                String(
+                    parsed.text ||
+                    ""
+                ).trim();
+
+
+            if (text) {
+
+                addChatMessage(
+                    "ai",
+                    text
+                );
+
+                conversation.push({
+
+                    role:
+                        "assistant",
+
+                    content:
+                        text
+
+                });
+            }
+
+
+            if (question) {
+
+                addChatMessage(
+                    "ai",
+                    question
+                );
+
+
+                conversation.push({
+
+                    role:
+                        "assistant",
+
+                    content:
+                        question
+
+                });
+
+
+                questionCount++;
+
+                return;
+            }
+        }
+
+
+        /* =========================================
+           QUESTION FALLBACK
+        ========================================= */
+
+        if (
+            parsed.type ===
+            "question"
+        ) {
+
+            const question =
+                String(
+                    parsed.question ||
+                    ""
+                ).trim();
+
+
+            if (!question) {
 
                 throw new Error(
-                    "AI question was empty."
+                    "AI returned an empty question."
                 );
             }
 
-            questionCount++;
-
-            const question =
-                cleanQuestion(
-                    parsed.question
-                );
 
             addChatMessage(
                 "ai",
                 question
             );
 
+
             conversation.push({
 
-                role: "assistant",
+                role:
+                    "assistant",
 
-                content: question
+                content:
+                    question
 
             });
+
+
+            questionCount++;
 
             return;
         }
 
-        /*
+
+        /* =========================================
            RESULT
-        */
+        ========================================= */
 
         if (
-            parsed.type === "result"
+            parsed.type ===
+            "result"
         ) {
-
-            /*
-               Prevent ridiculously early
-               conclusions.
-            */
-
-            if (
-                questionCount < 4
-            ) {
-
-                console.warn(
-                    "AI attempted early result. Asking for more information."
-                );
-
-                await requestMoreInformation();
-
-                return;
-            }
 
             conversation.push({
 
-                role: "assistant",
+                role:
+                    "assistant",
 
                 content:
                     JSON.stringify(
@@ -878,16 +961,20 @@ async function askAI() {
 
             });
 
+
             showResult(
                 parsed
             );
 
+
             return;
         }
+
 
         throw new Error(
             "Unknown AI response type."
         );
+
 
     } catch (error) {
 
@@ -896,16 +983,20 @@ async function askAI() {
             error
         );
 
+
         addChatMessage(
             "ai",
-            "I had trouble processing that. Give me a second and try again."
+            getFriendlyError(
+                error
+            )
         );
 
     } finally {
 
-        stopWaitingIndicator();
+        chatBusy =
+            false;
 
-        chatBusy = false;
+        removeLoadingStatus();
 
         updateChatButton();
     }
@@ -913,411 +1004,144 @@ async function askAI() {
 
 
 /* =========================================================
-   RETRY AI
+   API REQUEST WITH CLIENT RETRY
 ========================================================= */
 
-async function retryAI() {
+async function apiRequest(
+    payload,
+    identification = false
+) {
 
-    try {
+    const maxAttempts =
+        3;
 
-        const response =
-            await fetch(
-                API_URL,
-                {
-                    method: "POST",
 
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
+    for (
+        let attempt = 0;
+        attempt < maxAttempts;
+        attempt++
+    ) {
 
-                    body: JSON.stringify({
+        try {
 
-                        mode: "chat",
+            const response =
+                await fetch(
+                    API_URL,
+                    {
+                        method: "POST",
 
-                        category:
-                            selectedCategory,
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
 
-                        role:
-                            selectedRole,
-
-                        itemType:
-                            itemType,
-
-                        image:
-                            uploadedImageData,
-
-                        conversation:
-                            conversation,
-
-                        questionCount:
-                            questionCount,
-
-                        retry: true
-
-                    })
-                }
-            );
-
-        const data =
-            await response.json();
-
-        const content =
-            data
-                ?.result
-                ?.choices?.[0]
-                ?.message
-                ?.content;
-
-        console.log(
-            "RAW AI RETRY:",
-            content
-        );
-
-        const parsed =
-            parseAIResponse(
-                content
-            );
-
-        if (!parsed) {
-
-            throw new Error(
-                "Retry response could not be parsed."
-            );
-        }
-
-        if (
-            parsed.type === "question"
-        ) {
-
-            questionCount++;
-
-            const question =
-                cleanQuestion(
-                    parsed.question
+                        body:
+                            JSON.stringify(
+                                payload
+                            )
+                    }
                 );
 
-            addChatMessage(
-                "ai",
-                question
-            );
 
-            conversation.push({
+            const data =
+                await response.json();
 
-                role: "assistant",
-
-                content: question
-
-            });
-
-            return;
-        }
-
-        if (
-            parsed.type === "result"
-        ) {
 
             if (
-                questionCount < 4
+                response.ok
             ) {
 
-                await requestMoreInformation();
-
-                return;
+                return data;
             }
 
-            showResult(
-                parsed
-            );
 
-            return;
-        }
+            /*
+               429 = rate limit.
+            */
 
-    } catch (error) {
+            if (
+                response.status ===
+                429
+            ) {
 
-        console.error(
-            "Retry failed:",
-            error
-        );
+                if (
+                    attempt <
+                    maxAttempts - 1
+                ) {
 
-        addChatMessage(
-            "ai",
-            "I'm still processing your item. Please try your answer again."
-        );
-    }
-}
-
-
-/* =========================================================
-   REQUEST MORE INFORMATION
-========================================================= */
-
-async function requestMoreInformation() {
-
-    const forcedQuestion =
-        createFollowUpQuestion();
-
-    questionCount++;
-
-    addChatMessage(
-        "ai",
-        forcedQuestion
-    );
-
-    conversation.push({
-
-        role: "assistant",
-
-        content:
-            forcedQuestion
-
-    });
-}
+                    const seconds =
+                        Math.min(
+                            2 +
+                            attempt * 2,
+                            6
+                        );
 
 
-/* =========================================================
-   FALLBACK FOLLOW-UP QUESTION
-========================================================= */
-
-function createFollowUpQuestion() {
-
-    const type =
-        itemType.toLowerCase();
-
-    if (
-        selectedCategory === "Beauty"
-    ) {
-
-        return `Before I make a decision about your ${itemType}, how long have you had it or when did you first open it?`;
-    }
-
-    if (
-        selectedCategory === "Clothing"
-    ) {
-
-        return `Before deciding about your ${itemType}, when was the last time you actually wore it?`;
-    }
-
-    if (
-        selectedCategory === "Electronics"
-    ) {
-
-        return `Before deciding about your ${itemType}, does it currently work the way you need it to?`;
-    }
-
-    if (
-        selectedCategory === "Books"
-    ) {
-
-        return `Before deciding about your ${itemType}, do you realistically expect to read or use it again?`;
-    }
-
-    if (
-        selectedCategory === "Home"
-    ) {
-
-        return `Before deciding about your ${itemType}, when was the last time you actually used it?`;
-    }
-
-    return `Before I make a decision about your ${itemType}, would you genuinely miss having it if it were gone tomorrow?`;
-}
+                    setLoadingStatus(
+                        `AI is busy right now — retrying in ${seconds}s...`
+                    );
 
 
-/* =========================================================
-   FINAL DECISION REQUEST
-========================================================= */
+                    await sleep(
+                        seconds * 1000
+                    );
 
-async function requestFinalDecision() {
 
-    try {
-
-        const response =
-            await fetch(
-                API_URL,
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify({
-
-                        mode: "chat",
-
-                        category:
-                            selectedCategory,
-
-                        role:
-                            selectedRole,
-
-                        itemType:
-                            itemType,
-
-                        image:
-                            uploadedImageData,
-
-                        conversation:
-                            conversation,
-
-                        questionCount:
-                            questionCount,
-
-                        forceDecision:
-                            true
-
-                    })
+                    continue;
                 }
+
+
+                throw new Error(
+                    "RATE_LIMIT"
+                );
+            }
+
+
+            throw new Error(
+                data?.error ||
+                `API error ${response.status}`
             );
 
-        const data =
-            await response.json();
 
-        const content =
-            data
-                ?.result
-                ?.choices?.[0]
-                ?.message
-                ?.content;
+        } catch (error) {
 
-        console.log(
-            "RAW FINAL RESPONSE:",
-            content
-        );
+            if (
+                error.message ===
+                "RATE_LIMIT"
+            ) {
 
-        const parsed =
-            parseAIResponse(
-                content
-            );
+                throw error;
+            }
 
-        if (
-            parsed &&
-            parsed.type === "result"
-        ) {
 
-            showResult(
-                parsed
-            );
+            if (
+                attempt <
+                maxAttempts - 1
+            ) {
 
-            return;
-        }
-
-        /*
-           If the AI still asks a question,
-           display it rather than crashing.
-        */
-
-        if (
-            parsed &&
-            parsed.type === "question"
-        ) {
-
-            const question =
-                cleanQuestion(
-                    parsed.question
+                setLoadingStatus(
+                    "Connection hiccup — trying again..."
                 );
 
-            addChatMessage(
-                "ai",
-                question
-            );
 
-            conversation.push({
+                await sleep(
+                    1500 *
+                    (attempt + 1)
+                );
 
-                role: "assistant",
 
-                content: question
+                continue;
+            }
 
-            });
 
-            return;
+            throw error;
         }
-
-        throw new Error(
-            "Could not obtain final decision."
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Final decision error:",
-            error
-        );
-
-        addChatMessage(
-            "ai",
-            "I couldn't finalize the decision yet. Please try sending your last answer again."
-        );
-    }
-}
-
-
-/* =========================================================
-   SEND USER MESSAGE
-========================================================= */
-
-async function sendChatMessage() {
-
-    if (chatBusy) {
-        return;
     }
 
-    const input =
-        document.getElementById(
-            "chatInput"
-        );
 
-    if (!input) {
-        return;
-    }
-
-    const text =
-        input.value.trim();
-
-    if (!text) {
-        return;
-    }
-
-    addChatMessage(
-        "user",
-        text
+    throw new Error(
+        "AI request failed."
     );
-
-    conversation.push({
-
-        role: "user",
-
-        content: text
-
-    });
-
-    input.value = "";
-
-    autoResizeInput();
-
-    updateChatButton();
-
-    await askAI();
-}
-
-
-/* =========================================================
-   CLEAN QUESTION
-========================================================= */
-
-function cleanQuestion(text) {
-
-    if (!text) {
-        return "Could you tell me a little more about this item?";
-    }
-
-    return String(text)
-        .replace(
-            /^["']|["']$/g,
-            ""
-        )
-        .trim();
 }
 
 
@@ -1325,20 +1149,24 @@ function cleanQuestion(text) {
    PARSE AI RESPONSE
 ========================================================= */
 
-function parseAIResponse(content) {
+function parseAIResponse(
+    content,
+    context = "chat"
+) {
 
-    if (!content) {
+    if (
+        !content ||
+        typeof content !==
+        "string"
+    ) {
+
         return null;
     }
 
-    let cleaned =
-        String(content)
-            .trim();
 
-    console.log(
-        "RAW AI RESPONSE:",
-        cleaned
-    );
+    let cleaned =
+        content.trim();
+
 
     /*
        Remove markdown fences.
@@ -1360,6 +1188,7 @@ function parseAIResponse(content) {
             )
             .trim();
 
+
     /*
        Direct JSON.
     */
@@ -1377,15 +1206,21 @@ function parseAIResponse(content) {
         );
     }
 
+
     /*
        Extract first JSON object.
     */
 
     const firstBrace =
-        cleaned.indexOf("{");
+        cleaned.indexOf(
+            "{"
+        );
 
     const lastBrace =
-        cleaned.lastIndexOf("}");
+        cleaned.lastIndexOf(
+            "}"
+        );
+
 
     if (
         firstBrace !== -1 &&
@@ -1398,6 +1233,7 @@ function parseAIResponse(content) {
                 firstBrace,
                 lastBrace + 1
             );
+
 
         try {
 
@@ -1413,157 +1249,149 @@ function parseAIResponse(content) {
         }
     }
 
+
     /*
-       Sometimes models return only
-       a plain question despite the prompt.
+       Some models occasionally
+       return a plain question.
     */
 
     if (
-        looksLikeQuestion(cleaned)
+        context ===
+        "chat"
     ) {
 
-        console.warn(
-            "AI returned a plain question. Converting automatically."
-        );
+        const looksLikeQuestion =
+            cleaned.includes(
+                "?"
+            );
 
-        return {
-
-            type: "question",
-
-            question:
-                cleanQuestion(
-                    cleaned
-                )
-
-        };
-    }
-
-    /*
-       Sometimes the model returns a plain
-       recommendation sentence.
-    */
-
-    const recommendation =
-        extractRecommendation(
-            cleaned
-        );
-
-    if (recommendation) {
-
-        return {
-
-            type: "result",
-
-            recommendation:
-                recommendation,
-
-            confidence: 65,
-
-            reasoning:
-                cleaned,
-
-            reflection:
-                "This recommendation was generated from the information available in the conversation."
-
-        };
-    }
-
-    console.error(
-        "Could not parse AI response:",
-        cleaned
-    );
-
-    return null;
-}
-
-
-/* =========================================================
-   QUESTION DETECTION
-========================================================= */
-
-function looksLikeQuestion(text) {
-
-    if (!text) {
-        return false;
-    }
-
-    const lower =
-        text.toLowerCase();
-
-    if (
-        text.includes("?")
-    ) {
-        return true;
-    }
-
-    const starts = [
-
-        "how ",
-        "what ",
-        "when ",
-        "where ",
-        "why ",
-        "which ",
-        "do you ",
-        "does it ",
-        "is it ",
-        "are you ",
-        "have you ",
-        "would you ",
-        "can you ",
-        "did you "
-
-    ];
-
-    return starts.some(
-        phrase =>
-            lower.startsWith(
-                phrase
-            )
-    );
-}
-
-
-/* =========================================================
-   EXTRACT RECOMMENDATION
-========================================================= */
-
-function extractRecommendation(text) {
-
-    const upper =
-        text.toUpperCase();
-
-    const recommendations = [
-
-        "KEEP",
-        "SELL",
-        "DONATE",
-        "DISCARD",
-        "RECYCLE"
-
-    ];
-
-    for (
-        const recommendation
-        of recommendations
-    ) {
 
         if (
-            upper.includes(
-                recommendation
-            )
+            looksLikeQuestion &&
+            cleaned.length <
+            500
         ) {
 
-            return recommendation;
+            console.warn(
+                "AI returned a plain question. Converting automatically."
+            );
+
+
+            return {
+
+                type:
+                    "question",
+
+                question:
+                    cleaned
+
+            };
         }
     }
 
+
+    console.error(
+        "Could not parse AI response:",
+        content
+    );
+
+
     return null;
 }
 
 
 /* =========================================================
-   CHAT MESSAGE UI
+   EXTRACT AI CONTENT
+========================================================= */
+
+function extractAIContent(
+    data
+) {
+
+    return (
+        data
+            ?.result
+            ?.choices?.[0]
+            ?.message
+            ?.content ||
+        data
+            ?.choices?.[0]
+            ?.message
+            ?.content ||
+        ""
+    );
+}
+
+
+/* =========================================================
+   SEND USER MESSAGE
+========================================================= */
+
+async function sendChatMessage() {
+
+    if (chatBusy) {
+        return;
+    }
+
+
+    const input =
+        document.getElementById(
+            "chatInput"
+        );
+
+
+    if (!input) {
+        return;
+    }
+
+
+    const text =
+        input.value.trim();
+
+
+    if (!text) {
+        return;
+    }
+
+
+    /*
+       Show user message.
+    */
+
+    addChatMessage(
+        "user",
+        text
+    );
+
+
+    /*
+       Save user message.
+    */
+
+    conversation.push({
+
+        role:
+            "user",
+
+        content:
+            text
+
+    });
+
+
+    input.value =
+        "";
+
+
+    autoResizeInput();
+
+
+    await askAI();
+}
+
+
+/* =========================================================
+   CHAT MESSAGE
 ========================================================= */
 
 function addChatMessage(
@@ -1576,165 +1404,268 @@ function addChatMessage(
             "chatWindow"
         );
 
+
     if (!chatWindow) {
         return;
     }
+
 
     const message =
         document.createElement(
             "div"
         );
 
+
     message.className =
         `chat-message ${type}`;
 
+
     message.textContent =
         text;
+
 
     chatWindow.appendChild(
         message
     );
 
+
     scrollChatToBottom();
 }
 
 
 /* =========================================================
-   TYPING / WAITING INDICATOR
+   THINKING STATUS
 ========================================================= */
 
-function addTypingMessage(
-    text = "Thinking…"
+function setLoadingStatus(
+    text
 ) {
 
-    const chatWindow =
+    let element =
         document.getElementById(
-            "chatWindow"
+            "aiLoadingStatus"
         );
 
-    if (!chatWindow) {
-        return;
+
+    if (!element) {
+
+        const chatWindow =
+            document.getElementById(
+                "chatWindow"
+            );
+
+
+        if (!chatWindow) {
+            return;
+        }
+
+
+        element =
+            document.createElement(
+                "div"
+            );
+
+
+        element.id =
+            "aiLoadingStatus";
+
+
+        element.className =
+            "ai-loading-status";
+
+
+        chatWindow.appendChild(
+            element
+        );
     }
 
-    removeTypingMessage();
 
-    const typing =
-        document.createElement(
-            "div"
-        );
+    element.innerHTML = `
 
-    typing.id =
-        "typingMessage";
+        <div class="ai-loading-spinner"></div>
 
-    typing.className =
-        "chat-message ai typing";
+        <div class="ai-loading-content">
 
-    typing.textContent =
-        text;
+            <strong>
+                Declutter.AI
+            </strong>
 
-    chatWindow.appendChild(
-        typing
-    );
+            <span id="aiLoadingText">
+                ${escapeHTML(text)}
+            </span>
+
+            <div class="ai-loading-dots">
+                <i></i>
+                <i></i>
+                <i></i>
+            </div>
+
+        </div>
+
+    `;
+
 
     scrollChatToBottom();
+
+
+    /*
+       Small rotating status text.
+    */
+
+    clearInterval(
+        loadingTimer
+    );
+
+
+    const statuses = [
+
+        "Thinking about your answer...",
+
+        "Looking for what matters...",
+
+        "Personalizing the next question...",
+
+        "Checking the bigger picture..."
+
+    ];
+
+
+    let index =
+        0;
+
+
+    loadingTimer =
+        setInterval(
+            () => {
+
+                const textElement =
+                    document.getElementById(
+                        "aiLoadingText"
+                    );
+
+
+                if (
+                    textElement &&
+                    chatBusy
+                ) {
+
+                    textElement.textContent =
+                        statuses[
+                            index %
+                            statuses.length
+                        ];
+
+                    index++;
+                }
+
+            },
+            2500
+        );
+}
+
+
+function removeLoadingStatus() {
+
+    clearInterval(
+        loadingTimer
+    );
+
+
+    loadingTimer =
+        null;
+
+
+    const element =
+        document.getElementById(
+            "aiLoadingStatus"
+        );
+
+
+    if (element) {
+
+        element.remove();
+    }
+}
+
+
+/* =========================================================
+   THINKING TEXT
+========================================================= */
+
+function getThinkingStatus() {
+
+    if (
+        questionCount ===
+        0
+    ) {
+
+        return "Thinking about where to start...";
+    }
+
+
+    if (
+        questionCount <
+        3
+    ) {
+
+        return "Getting to know your item...";
+    }
+
+
+    if (
+        questionCount <
+        6
+    ) {
+
+        return "Looking at the bigger picture...";
+    }
+
+
+    return "Figuring out what makes the most sense...";
+}
+
+
+/* =========================================================
+   FRIENDLY ERRORS
+========================================================= */
+
+function getFriendlyError(
+    error
+) {
+
+    if (
+        error?.message ===
+        "RATE_LIMIT"
+    ) {
+
+        return "The AI is a little busy right now. Give it a few seconds and try sending your answer again.";
+    }
+
+
+    return "I hit a temporary connection problem. Your conversation is still here — try sending your answer again.";
+}
+
+
+/* =========================================================
+   TYPING COMPATIBILITY
+========================================================= */
+
+function addTypingMessage() {
+
+    setLoadingStatus(
+        "Thinking..."
+    );
 }
 
 
 function removeTypingMessage() {
 
-    const typing =
-        document.getElementById(
-            "typingMessage"
-        );
-
-    if (typing) {
-        typing.remove();
-    }
+    removeLoadingStatus();
 }
 
 
 /* =========================================================
-   SMART WAITING INDICATOR
-========================================================= */
-
-function startWaitingIndicator(
-    initialText
-) {
-
-    waitingStartedAt =
-        Date.now();
-
-    addTypingMessage(
-        initialText
-    );
-
-    clearInterval(
-        waitingTimer
-    );
-
-    waitingTimer =
-        setInterval(() => {
-
-            const elapsed =
-                Math.floor(
-                    (
-                        Date.now() -
-                        waitingStartedAt
-                    ) / 1000
-                );
-
-            let message;
-
-            if (elapsed < 4) {
-
-                message =
-                    initialText;
-
-            } else if (elapsed < 8) {
-
-                message =
-                    "Still thinking…";
-
-            } else if (elapsed < 15) {
-
-                message =
-                    "Almost there…";
-
-            } else if (elapsed < 25) {
-
-                message =
-                    "Taking a little longer than usual…";
-
-            } else {
-
-                message =
-                    "Still working on it — please wait…";
-            }
-
-            addTypingMessage(
-                message
-            );
-
-        }, 3000);
-}
-
-
-function stopWaitingIndicator() {
-
-    clearInterval(
-        waitingTimer
-    );
-
-    waitingTimer = null;
-
-    waitingStartedAt = null;
-
-    removeTypingMessage();
-}
-
-
-/* =========================================================
-   SCROLL CHAT
+   SCROLL
 ========================================================= */
 
 function scrollChatToBottom() {
@@ -1744,16 +1675,20 @@ function scrollChatToBottom() {
             "chatWindow"
         );
 
+
     if (!chatWindow) {
         return;
     }
 
-    requestAnimationFrame(() => {
 
-        chatWindow.scrollTop =
-            chatWindow.scrollHeight;
+    requestAnimationFrame(
+        () => {
 
-    });
+            chatWindow.scrollTop =
+                chatWindow.scrollHeight;
+
+        }
+    );
 }
 
 
@@ -1768,14 +1703,17 @@ function updateChatButton() {
             "chatSend"
         );
 
+
     const input =
         document.getElementById(
             "chatInput"
         );
 
+
     if (!button) {
         return;
     }
+
 
     if (chatBusy) {
 
@@ -1788,9 +1726,11 @@ function updateChatButton() {
         return;
     }
 
+
     button.disabled =
         !input ||
         !input.value.trim();
+
 
     button.textContent =
         "Send →";
@@ -1808,12 +1748,15 @@ function autoResizeInput() {
             "chatInput"
         );
 
+
     if (!input) {
         return;
     }
 
+
     input.style.height =
         "auto";
+
 
     input.style.height =
         `${Math.min(
@@ -1836,9 +1779,11 @@ document.addEventListener(
                 "chatInput"
             );
 
+
         if (!input) {
             return;
         }
+
 
         input.addEventListener(
             "input",
@@ -1851,12 +1796,14 @@ document.addEventListener(
             }
         );
 
+
         input.addEventListener(
             "keydown",
             event => {
 
                 if (
-                    event.key === "Enter" &&
+                    event.key ===
+                    "Enter" &&
                     !event.shiftKey
                 ) {
 
@@ -1868,6 +1815,7 @@ document.addEventListener(
 
             }
         );
+
 
         updateChatButton();
 
@@ -1888,26 +1836,26 @@ function showResult(
             "recommendation"
         );
 
+
     const confidence =
         document.getElementById(
             "confidence"
         );
+
 
     const reasoning =
         document.getElementById(
             "reasoningText"
         );
 
+
     const reflection =
         document.getElementById(
             "reflectionText"
         );
 
-    /*
-       Recommendation
-    */
 
-    const recommendationValue =
+    const value =
         String(
             result.recommendation ||
             "UNCERTAIN"
@@ -1918,56 +1866,40 @@ function showResult(
             )
             .toUpperCase();
 
+
     if (recommendation) {
 
         recommendation.textContent =
-            recommendationValue;
+            value;
     }
 
-    /*
-       Confidence
-    */
 
     if (confidence) {
 
-        let value =
-            Number(
-                result.confidence
-            );
-
-        if (
-            !Number.isFinite(value)
-        ) {
-            value = 65;
-        }
-
-        value =
+        const number =
             Math.max(
                 0,
                 Math.min(
                     100,
-                    Math.round(value)
+                    Number(
+                        result.confidence
+                    ) || 0
                 )
             );
 
+
         confidence.textContent =
-            `${value}% confidence`;
+            `${number}% confidence`;
     }
 
-    /*
-       Reasoning
-    */
 
     if (reasoning) {
 
         reasoning.textContent =
             result.reasoning ||
-            "The recommendation is based on your answers and the information gathered about this item.";
+            "The AI could not provide detailed reasoning.";
     }
 
-    /*
-       Reflection
-    */
 
     if (reflection) {
 
@@ -1976,36 +1908,45 @@ function showResult(
             "";
     }
 
-    /*
-       Icon
-    */
 
     const icon =
         document.getElementById(
             "resultIcon"
         );
 
+
     if (icon) {
 
         const icons = {
 
-            KEEP: "♡",
+            KEEP:
+                "♡",
 
-            SELL: "↗",
+            SELL:
+                "↗",
 
-            DONATE: "♡",
+            DONATE:
+                "♡",
 
-            DISCARD: "×",
+            DISCARD:
+                "×",
 
-            RECYCLE: "↻"
+            RECYCLE:
+                "↻"
 
         };
 
+
         icon.textContent =
             icons[
-                recommendationValue
-            ] || "✦";
+                value.replace(
+                    " ",
+                    "_"
+                )
+            ] ||
+            "✦";
     }
+
 
     showStep(5);
 }
@@ -2018,83 +1959,78 @@ function showResult(
 async function analyzeItem() {
 
     /*
-       The new chat engine handles
+       Old HTML may still call this.
+       The new chat engine performs
        the analysis automatically.
     */
 
     if (
-        conversation.length >= 4
+        !chatBusy &&
+        conversation.length > 0
     ) {
 
-        await requestFinalDecision();
-
-    } else {
-
         await askAI();
-
     }
 }
 
 
 /* =========================================================
-   RESET / NEW ITEM
+   RESET
 ========================================================= */
 
 function newItem() {
 
-    selectedCategory = "";
+    selectedCategory =
+        "";
 
-    selectedRole = "";
+    selectedRole =
+        "";
 
-    uploadedImage = null;
+    uploadedImage =
+        null;
 
-    uploadedImageData = "";
+    uploadedImageData =
+        "";
 
-    itemType = "";
+    itemType =
+        "";
 
-    itemIdentificationConfidence = 0;
+    conversation =
+        [];
 
-    conversation = [];
+    questionCount =
+        0;
 
-    chatBusy = false;
-
-    identificationBusy = false;
-
-    questionCount = 0;
-
-    clearInterval(
-        waitingTimer
-    );
-
-    waitingTimer = null;
+    chatBusy =
+        false;
 
 
-    /*
-       File input
-    */
+    removeLoadingStatus();
 
-    const input =
+
+    const fileInput =
         document.getElementById(
             "imageInput"
         );
 
-    if (input) {
-        input.value = "";
+
+    if (fileInput) {
+
+        fileInput.value =
+            "";
     }
 
-
-    /*
-       Image preview
-    */
 
     const preview =
         document.getElementById(
             "imagePreview"
         );
 
+
     if (preview) {
 
-        preview.src = "";
+        preview.src =
+            "";
 
         preview.classList.add(
             "hidden"
@@ -2102,31 +2038,25 @@ function newItem() {
     }
 
 
-    /*
-       Upload content
-    */
-
-    const content =
+    const uploadContent =
         document.getElementById(
             "uploadContent"
         );
 
-    if (content) {
 
-        content.classList.remove(
+    if (uploadContent) {
+
+        uploadContent.classList.remove(
             "hidden"
         );
     }
 
 
-    /*
-       Image button
-    */
-
     const imageButton =
         document.getElementById(
             "imageContinue"
         );
+
 
     if (imageButton) {
 
@@ -2134,10 +2064,6 @@ function newItem() {
             true;
     }
 
-
-    /*
-       Category buttons
-    */
 
     document
         .querySelectorAll(
@@ -2157,6 +2083,7 @@ function newItem() {
             "categoryContinue"
         );
 
+
     if (categoryButton) {
 
         categoryButton.disabled =
@@ -2164,17 +2091,16 @@ function newItem() {
     }
 
 
-    /*
-       Roles
-    */
-
     const roles =
         document.getElementById(
             "roles"
         );
 
+
     if (roles) {
-        roles.innerHTML = "";
+
+        roles.innerHTML =
+            "";
     }
 
 
@@ -2183,6 +2109,7 @@ function newItem() {
             "roleContinue"
         );
 
+
     if (roleButton) {
 
         roleButton.disabled =
@@ -2190,17 +2117,16 @@ function newItem() {
     }
 
 
-    /*
-       Chat
-    */
-
     const chatWindow =
         document.getElementById(
             "chatWindow"
         );
 
+
     if (chatWindow) {
-        chatWindow.innerHTML = "";
+
+        chatWindow.innerHTML =
+            "";
     }
 
 
@@ -2209,39 +2135,22 @@ function newItem() {
             "chatInput"
         );
 
+
     if (chatInput) {
 
-        chatInput.value = "";
+        chatInput.value =
+            "";
 
         chatInput.style.height =
             "auto";
     }
 
 
-    /*
-       Item confirmation
-    */
-
-    const confirmation =
-        document.getElementById(
-            "itemConfirmationText"
-        );
-
-    if (confirmation) {
-
-        confirmation.textContent =
-            "Getting ready...";
-    }
-
-
-    /*
-       Result
-    */
-
     const recommendation =
         document.getElementById(
             "recommendation"
         );
+
 
     if (recommendation) {
 
@@ -2255,6 +2164,7 @@ function newItem() {
             "confidence"
         );
 
+
     if (confidence) {
 
         confidence.textContent =
@@ -2267,6 +2177,7 @@ function newItem() {
             "reasoningText"
         );
 
+
     if (reasoning) {
 
         reasoning.textContent =
@@ -2278,6 +2189,7 @@ function newItem() {
         document.getElementById(
             "reflectionText"
         );
+
 
     if (reflection) {
 
@@ -2303,32 +2215,50 @@ function saveItem() {
 
 
 /* =========================================================
-   DEBUG HELPER
+   UTILITIES
 ========================================================= */
 
-window.DeclutterAI = {
+function sleep(ms) {
 
-    getState: () => ({
+    return new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                ms
+            )
+    );
+}
 
-        selectedCategory,
 
-        selectedRole,
+function escapeHTML(
+    value
+) {
 
-        itemType,
+    return String(
+        value
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+}
 
-        itemIdentificationConfidence,
-
-        questionCount,
-
-        conversationLength:
-            conversation.length
-
-    }),
-
-    reset:
-        newItem
-
-};
 
 console.log(
     "Declutter.AI final script loaded."
