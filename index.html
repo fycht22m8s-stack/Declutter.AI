@@ -1,7 +1,8 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -16,24 +17,46 @@
         content="Declutter.AI helps you make smarter decisions about the things you own."
     >
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
 
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet"
     >
 
-    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="style.css?v=5"
+    >
+
 </head>
+
 
 <body>
 
+
+<!-- =====================================================
+     NAVIGATION
+===================================================== -->
+
 <header class="navbar">
 
-    <a href="#" class="logo">
+    <a
+        href="#"
+        class="logo"
+    >
         declutter<span>.ai</span>
     </a>
+
 
     <button
         type="button"
@@ -46,6 +69,11 @@
 </header>
 
 
+
+<!-- =====================================================
+     LANDING
+===================================================== -->
+
 <main id="landing">
 
     <section class="hero">
@@ -54,16 +82,19 @@
             ✦ AI-powered decision making
         </div>
 
+
         <h1>
             Decide what<br>
             <span>stays.</span>
         </h1>
+
 
         <p class="hero-description">
             Your AI-powered decision assistant for everything you own.
             Upload an item, answer a few smart questions, and get a
             personalized perspective.
         </p>
+
 
         <button
             type="button"
@@ -74,12 +105,18 @@
             <span>→</span>
         </button>
 
+
         <p class="microcopy">
             Keep · Sell · Donate · Recycle · Discard
         </p>
 
     </section>
 
+
+
+    <!-- =================================================
+         HOW IT WORKS
+    ================================================== -->
 
     <section class="how-section">
 
@@ -96,7 +133,9 @@
 
         </div>
 
+
         <div class="steps">
+
 
             <div class="step">
 
@@ -117,6 +156,7 @@
                 </p>
 
             </div>
+
 
 
             <div class="step">
@@ -141,6 +181,7 @@
             </div>
 
 
+
             <div class="step">
 
                 <div class="step-number">
@@ -162,6 +203,7 @@
 
             </div>
 
+
         </div>
 
     </section>
@@ -169,13 +211,29 @@
 </main>
 
 
-<main id="app" class="app hidden">
+
+<!-- =====================================================
+     APPLICATION
+===================================================== -->
+
+<main
+    id="app"
+    class="app hidden"
+>
+
+
+    <!-- =================================================
+         PROGRESS
+    ================================================== -->
 
     <div class="progress-container">
 
         <div class="progress-bar">
+
             <div id="progress"></div>
+
         </div>
+
 
         <p id="step-label">
             Step 1 of 4
@@ -184,9 +242,15 @@
     </div>
 
 
-    <!-- STEP 1 -->
 
-    <section id="step1" class="app-step">
+    <!-- =================================================
+         STEP 1 — IMAGE
+    ================================================== -->
+
+    <section
+        id="step1"
+        class="app-step"
+    >
 
         <div class="app-heading">
 
@@ -217,6 +281,7 @@
                 onchange="previewImage(event)"
             >
 
+
             <div id="uploadContent">
 
                 <div class="upload-icon">
@@ -232,6 +297,7 @@
                 </p>
 
             </div>
+
 
             <img
                 id="imagePreview"
@@ -255,9 +321,15 @@
     </section>
 
 
-    <!-- STEP 2 -->
 
-    <section id="step2" class="app-step hidden">
+    <!-- =================================================
+         STEP 2 — CATEGORY
+    ================================================== -->
+
+    <section
+        id="step2"
+        class="app-step hidden"
+    >
 
         <div class="app-heading">
 
@@ -286,6 +358,7 @@
                 <span>Clothing</span>
             </button>
 
+
             <button
                 type="button"
                 onclick="selectCategory(this, 'Electronics')"
@@ -293,6 +366,7 @@
                 💻
                 <span>Electronics</span>
             </button>
+
 
             <button
                 type="button"
@@ -302,6 +376,7 @@
                 <span>Books</span>
             </button>
 
+
             <button
                 type="button"
                 onclick="selectCategory(this, 'Beauty')"
@@ -310,6 +385,7 @@
                 <span>Beauty</span>
             </button>
 
+
             <button
                 type="button"
                 onclick="selectCategory(this, 'Home')"
@@ -317,6 +393,7 @@
                 🏠
                 <span>Home</span>
             </button>
+
 
             <button
                 type="button"
@@ -342,9 +419,15 @@
     </section>
 
 
-    <!-- STEP 3 -->
 
-    <section id="step3" class="app-step hidden">
+    <!-- =================================================
+         STEP 3 — ROLE
+    ================================================== -->
+
+    <section
+        id="step3"
+        class="app-step hidden"
+    >
 
         <div class="app-heading">
 
@@ -383,9 +466,15 @@
     </section>
 
 
-    <!-- STEP 4 -->
 
-    <section id="step4" class="app-step hidden">
+    <!-- =================================================
+         STEP 4 — CHAT
+    ================================================== -->
+
+    <section
+        id="step4"
+        class="app-step hidden"
+    >
 
         <div class="app-heading">
 
@@ -398,12 +487,14 @@
             </h2>
 
             <p>
-                AI will ask only the questions that matter
-                for your specific item.
+                Have a short conversation with AI about your item.
             </p>
 
         </div>
 
+
+
+        <!-- ITEM -->
 
         <div class="item-confirmation">
 
@@ -418,6 +509,7 @@
         </div>
 
 
+
         <!-- CHAT -->
 
         <div
@@ -425,6 +517,9 @@
             class="chat-window"
         ></div>
 
+
+
+        <!-- INPUT -->
 
         <div class="chat-input-wrapper">
 
@@ -435,6 +530,7 @@
                 placeholder="Tell AI anything that might help..."
                 autocomplete="off"
             ></textarea>
+
 
             <button
                 type="button"
@@ -456,15 +552,22 @@
     </section>
 
 
-    <!-- STEP 5 -->
 
-    <section id="step5" class="app-step hidden">
+    <!-- =================================================
+         STEP 5 — RESULT
+    ================================================== -->
+
+    <section
+        id="step5"
+        class="app-step hidden"
+    >
 
         <div class="result-card">
 
             <p class="eyebrow">
                 YOUR PERSPECTIVE
             </p>
+
 
             <div
                 id="resultIcon"
@@ -473,13 +576,16 @@
                 ✦
             </div>
 
+
             <p class="recommendation-label">
                 WHAT YOUR CONVERSATION SUGGESTS
             </p>
 
+
             <h2 id="recommendation">
                 UNCERTAIN
             </h2>
+
 
             <div class="confidence">
 
@@ -504,6 +610,7 @@
                     Your reasoning will appear here.
                 </p>
 
+
                 <p
                     id="reflectionText"
                     class="reflection-text"
@@ -522,6 +629,7 @@
                     Analyze another
                 </button>
 
+
                 <button
                     type="button"
                     onclick="saveItem()"
@@ -539,38 +647,31 @@
 </main>
 
 
-<!-- PROTOTYPE / ABOUT -->
+
+<!-- =====================================================
+     PROTOTYPE MESSAGE
+===================================================== -->
 
 <section class="prototype-section">
 
     <div class="prototype-card">
 
-        <div class="prototype-mark">
-            ✦
-        </div>
+        <h3>
+            A little note from the creator
+        </h3>
 
-        <p class="eyebrow">
-            CURRENTLY A PROTOTYPE
-        </p>
-
-        <h2>
-            Declutter.AI is just getting started.
-        </h2>
 
         <p>
-            This project is currently an early prototype created to
-            explore how AI can help people make more thoughtful
-            decisions about the things they own.
+            Declutter.AI is currently a prototype.
+            I'm building it step by step with the goal of turning
+            it into a useful, thoughtful tool for making better
+            decisions about the things we own.
         </p>
 
-        <p>
-            The goal is to keep improving the experience, make the
-            recommendations more useful, and eventually turn
-            Declutter.AI into a tool that anyone can use.
-        </p>
 
         <p class="prototype-note">
-            Your feedback and ideas can help shape what comes next.
+            Your feedback, ideas and support can help shape what
+            comes next.
         </p>
 
     </div>
@@ -578,60 +679,64 @@
 </section>
 
 
-<!-- FOOTER -->
+
+<!-- =====================================================
+     FOOTER
+===================================================== -->
 
 <footer>
 
-    <div class="footer-logo">
+    <p class="footer-logo">
         declutter<span>.ai</span>
-    </div>
+    </p>
+
 
     <small>
         Making decisions about your things a little easier.
     </small>
 
 
-    <div class="footer-contact">
-
-        <p>
-            Have an idea, suggestion or want to get in touch?
-        </p>
-
-        <a href="mailto:declutter.aiofficial@gmail.com">
-            declutter.aiofficial@gmail.com
-        </a>
-
-    </div>
+    <a
+        class="footer-contact"
+        href="mailto:declutter.aiofficial@gmail.com"
+    >
+        declutter.aiofficial@gmail.com
+    </a>
 
 
-    <!-- FUTURE SUPPORT / SPONSORS -->
-
-    <div class="future-support">
-
-        <span>
-            FUTURE SUPPORT
-        </span>
-
-        <p>
-            ☕ Buy Me a Coffee · Sponsors · Partnerships
-        </p>
-
-        <small>
-            Support options may be added in the future.
-        </small>
-
-    </div>
+    <div class="footer-divider"></div>
 
 
-    <div class="footer-bottom">
-        © 2026 Declutter.AI · Prototype
-    </div>
+    <!--
+        FUTURE SUPPORT / SPONSORS AREA
+
+        When you have a Buy Me a Coffee link,
+        replace the # below with the real URL.
+    -->
+
+    <a
+        href="#"
+        class="footer-support"
+        onclick="return false;"
+    >
+        ☕ Support Declutter.AI
+    </a>
+
+
+    <p class="footer-future">
+        Support &amp; sponsorship options coming in a future version.
+    </p>
 
 </footer>
 
 
-<script src="script.js?v=4"></script>
+
+<!-- =====================================================
+     SCRIPT
+===================================================== -->
+
+<script src="script.js?v=5"></script>
 
 </body>
+
 </html>
-```
