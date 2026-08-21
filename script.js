@@ -71,65 +71,37 @@ function previewImage(event) {
         return;
     }
 
-    uploadedImage =
-        file;
-
+    uploadedImage = file;
 
     const preview =
-        document.getElementById(
-            "imagePreview"
-        );
+        document.getElementById("imagePreview");
 
     const content =
-        document.getElementById(
-            "uploadContent"
-        );
-
+        document.getElementById("uploadContent");
 
     if (preview) {
 
         const objectURL =
             URL.createObjectURL(file);
 
-        preview.src =
-            objectURL;
+        preview.src = objectURL;
 
-        preview.classList.remove(
-            "hidden"
-        );
+        preview.classList.remove("hidden");
     }
-
 
     if (content) {
-
-        content.classList.add(
-            "hidden"
-        );
+        content.classList.add("hidden");
     }
-
 
     const button =
-        document.getElementById(
-            "imageContinue"
-        );
-
+        document.getElementById("imageContinue");
 
     if (button) {
-
-        button.disabled =
-            false;
+        button.disabled = false;
     }
-
-
-    /*
-       Convert image to base64
-       so Worker can send it to
-       the vision model.
-    */
 
     const reader =
         new FileReader();
-
 
     reader.onload =
         function () {
@@ -146,7 +118,6 @@ function previewImage(event) {
             );
         };
 
-
     reader.onerror =
         function () {
 
@@ -154,10 +125,8 @@ function previewImage(event) {
                 "Could not read image."
             );
 
-            uploadedImageData =
-                "";
+            uploadedImageData = "";
         };
-
 
     reader.readAsDataURL(file);
 }
@@ -169,42 +138,25 @@ function previewImage(event) {
 
 function showStep(step) {
 
-    currentStep =
-        step;
-
+    currentStep = step;
 
     document
-        .querySelectorAll(
-            ".app-step"
-        )
+        .querySelectorAll(".app-step")
         .forEach(section => {
 
-            section.classList.add(
-                "hidden"
-            );
+            section.classList.add("hidden");
 
         });
 
-
     const target =
-        document.getElementById(
-            `step${step}`
-        );
-
+        document.getElementById(`step${step}`);
 
     if (target) {
-
-        target.classList.remove(
-            "hidden"
-        );
+        target.classList.remove("hidden");
     }
 
-
     const progress =
-        document.getElementById(
-            "progress"
-        );
-
+        document.getElementById("progress");
 
     if (progress) {
 
@@ -218,19 +170,13 @@ function showStep(step) {
             `${percentage}%`;
     }
 
-
     const label =
-        document.getElementById(
-            "step-label"
-        );
-
+        document.getElementById("step-label");
 
     if (label) {
-
         label.textContent =
             `Step ${step} of 4`;
     }
-
 
     window.scrollTo({
         top: 0,
@@ -240,7 +186,6 @@ function showStep(step) {
 
 
 function nextStep(step) {
-
     showStep(step);
 }
 
@@ -266,26 +211,17 @@ function selectCategory(
 
         });
 
+    button.classList.add("selected");
 
-    button.classList.add(
-        "selected"
-    );
-
-
-    selectedCategory =
-        category;
-
+    selectedCategory = category;
 
     const continueButton =
         document.getElementById(
             "categoryContinue"
         );
 
-
     if (continueButton) {
-
-        continueButton.disabled =
-            false;
+        continueButton.disabled = false;
     }
 }
 
@@ -367,50 +303,31 @@ function generateRoles() {
         return;
     }
 
-
     const container =
-        document.getElementById(
-            "roles"
-        );
-
+        document.getElementById("roles");
 
     if (!container) {
         return;
     }
 
-
-    container.innerHTML =
-        "";
-
+    container.innerHTML = "";
 
     const roles =
-        rolesByCategory[
-            selectedCategory
-        ] || [
+        rolesByCategory[selectedCategory] || [
             "Everyday",
             "Occasional",
             "Sentimental",
             "Other"
         ];
 
-
     roles.forEach(role => {
 
         const button =
-            document.createElement(
-                "button"
-            );
+            document.createElement("button");
 
-
-        button.type =
-            "button";
-
-        button.textContent =
-            role;
-
-        button.className =
-            "role-button";
-
+        button.type = "button";
+        button.textContent = role;
+        button.className = "role-button";
 
         button.onclick =
             () => {
@@ -422,13 +339,9 @@ function generateRoles() {
 
             };
 
-
-        container.appendChild(
-            button
-        );
+        container.appendChild(button);
 
     });
-
 
     showStep(3);
 }
@@ -444,9 +357,7 @@ function selectRole(
 ) {
 
     document
-        .querySelectorAll(
-            ".role-button"
-        )
+        .querySelectorAll(".role-button")
         .forEach(btn => {
 
             btn.classList.remove(
@@ -455,26 +366,17 @@ function selectRole(
 
         });
 
+    button.classList.add("selected");
 
-    button.classList.add(
-        "selected"
-    );
-
-
-    selectedRole =
-        role;
-
+    selectedRole = role;
 
     const continueButton =
         document.getElementById(
             "roleContinue"
         );
 
-
     if (continueButton) {
-
-        continueButton.disabled =
-            false;
+        continueButton.disabled = false;
     }
 }
 
@@ -494,7 +396,6 @@ async function generateQuestions() {
         return;
     }
 
-
     if (!selectedRole) {
 
         alert(
@@ -504,35 +405,23 @@ async function generateQuestions() {
         return;
     }
 
-
-    conversation =
-        [];
-
-    itemType =
-        "";
-
-    questionCount =
-        0;
-
+    conversation = [];
+    itemType = "";
+    questionCount = 0;
 
     const chatWindow =
         document.getElementById(
             "chatWindow"
         );
 
-
     if (chatWindow) {
-
-        chatWindow.innerHTML =
-            "";
+        chatWindow.innerHTML = "";
     }
-
 
     const confirmation =
         document.getElementById(
             "itemConfirmationText"
         );
-
 
     if (confirmation) {
 
@@ -540,13 +429,7 @@ async function generateQuestions() {
             `${selectedCategory} · ${selectedRole}`;
     }
 
-
     showStep(4);
-
-
-    /*
-       Wait until FileReader has finished.
-    */
 
     if (
         uploadedImage &&
@@ -560,7 +443,6 @@ async function generateQuestions() {
         await waitForImage();
     }
 
-
     await identifyItem();
 }
 
@@ -571,37 +453,28 @@ async function generateQuestions() {
 
 function waitForImage() {
 
-    return new Promise(
-        resolve => {
+    return new Promise(resolve => {
 
-            let attempts =
-                0;
+        let attempts = 0;
 
+        const timer =
+            setInterval(() => {
 
-            const timer =
-                setInterval(
-                    () => {
+                attempts++;
 
-                        attempts++;
+                if (
+                    uploadedImageData ||
+                    attempts > 50
+                ) {
 
+                    clearInterval(timer);
 
-                        if (
-                            uploadedImageData ||
-                            attempts > 50
-                        ) {
+                    resolve();
+                }
 
-                            clearInterval(
-                                timer
-                            );
+            }, 100);
 
-                            resolve();
-                        }
-
-                    },
-                    100
-                );
-        }
-    );
+    });
 }
 
 
@@ -614,7 +487,6 @@ async function identifyItem() {
     setLoadingStatus(
         "Looking closely at your item..."
     );
-
 
     try {
 
@@ -636,18 +508,13 @@ async function identifyItem() {
                 true
             );
 
-
         const aiContent =
-            extractAIContent(
-                data
-            );
-
+            extractAIContent(data);
 
         console.log(
             "RAW IDENTIFICATION:",
             aiContent
         );
-
 
         const parsed =
             parseAIResponse(
@@ -655,11 +522,9 @@ async function identifyItem() {
                 "identification"
             );
 
-
         if (
             !parsed ||
-            parsed.type !==
-            "identification"
+            parsed.type !== "identification"
         ) {
 
             throw new Error(
@@ -667,11 +532,9 @@ async function identifyItem() {
             );
         }
 
-
         itemType =
             parsed.itemType ||
             "unknown item";
-
 
         console.log(
             "Identified item:",
@@ -680,39 +543,43 @@ async function identifyItem() {
             parsed.confidence
         );
 
-
-        /*
-           Add identification to chat.
-        */
-
         const opening =
             parsed.openingQuestion ||
             `I think this is a ${itemType}. Is that right?`;
 
+        const openingText =
+            `I think this is a ${itemType}. ${opening}`;
+
+        /*
+           IMPORTANT:
+           Remove loading BEFORE adding
+           the actual AI message.
+        */
+
+        removeLoadingStatus();
 
         addChatMessage(
             "ai",
-            `I think this is a ${itemType}. ${opening}`
+            openingText
         );
 
-
         conversation.push({
-
             role: "assistant",
-
-            content:
-                `I think this is a ${itemType}. ${opening}`
-
+            content: openingText
         });
 
+        /*
+           Explicitly tell the user it is their turn.
+        */
+
+        showYourTurn();
 
         /*
-           We don't count confirmation
-           as a real decision question.
+           Confirmation is not counted as
+           a decision question.
         */
 
         return;
-
 
     } catch (error) {
 
@@ -721,31 +588,25 @@ async function identifyItem() {
             error
         );
 
-
-        /*
-           Even if identification fails,
-           allow the user to continue.
-        */
+        removeLoadingStatus();
 
         itemType =
             "the item shown in the photo";
 
+        const fallback =
+            "I couldn't identify the item with enough confidence. Tell me what it is, and I'll take it from there.";
 
         addChatMessage(
             "ai",
-            "I couldn't identify the item with enough confidence. Tell me what it is, and I'll take it from there."
+            fallback
         );
 
-
         conversation.push({
-
             role: "assistant",
-
-            content:
-                "I couldn't identify the item with enough confidence. Tell me what it is, and I'll take it from there."
-
+            content: fallback
         });
 
+        showYourTurn();
     }
 }
 
@@ -760,15 +621,13 @@ async function askAI() {
         return;
     }
 
+    chatBusy = true;
 
-    chatBusy =
-        true;
-
+    removeYourTurn();
 
     setLoadingStatus(
         getThinkingStatus()
     );
-
 
     try {
 
@@ -797,25 +656,19 @@ async function askAI() {
                 false
             );
 
-
         const aiContent =
-            extractAIContent(
-                data
-            );
-
+            extractAIContent(data);
 
         console.log(
             "RAW AI RESPONSE:",
             aiContent
         );
 
-
         const parsed =
             parseAIResponse(
                 aiContent,
                 "chat"
             );
-
 
         if (!parsed) {
 
@@ -840,7 +693,6 @@ async function askAI() {
                     ""
                 ).trim();
 
-
             const text =
                 String(
                     parsed.text ||
@@ -850,43 +702,42 @@ async function askAI() {
 
             if (text) {
 
+                removeLoadingStatus();
+
                 addChatMessage(
                     "ai",
                     text
                 );
 
                 conversation.push({
-
-                    role:
-                        "assistant",
-
-                    content:
-                        text
-
+                    role: "assistant",
+                    content: text
                 });
             }
 
 
             if (question) {
 
+                /*
+                   Make sure loading disappears
+                   before the question appears.
+                */
+
+                removeLoadingStatus();
+
                 addChatMessage(
                     "ai",
                     question
                 );
 
-
                 conversation.push({
-
-                    role:
-                        "assistant",
-
-                    content:
-                        question
-
+                    role: "assistant",
+                    content: question
                 });
 
-
                 questionCount++;
+
+                showYourTurn();
 
                 return;
             }
@@ -908,7 +759,6 @@ async function askAI() {
                     ""
                 ).trim();
 
-
             if (!question) {
 
                 throw new Error(
@@ -916,25 +766,21 @@ async function askAI() {
                 );
             }
 
+            removeLoadingStatus();
 
             addChatMessage(
                 "ai",
                 question
             );
 
-
             conversation.push({
-
-                role:
-                    "assistant",
-
-                content:
-                    question
-
+                role: "assistant",
+                content: question
             });
 
-
             questionCount++;
+
+            showYourTurn();
 
             return;
         }
@@ -949,23 +795,15 @@ async function askAI() {
             "result"
         ) {
 
+            removeLoadingStatus();
+            removeYourTurn();
+
             conversation.push({
-
-                role:
-                    "assistant",
-
-                content:
-                    JSON.stringify(
-                        parsed
-                    )
-
+                role: "assistant",
+                content: JSON.stringify(parsed)
             });
 
-
-            showResult(
-                parsed
-            );
-
+            showResult(parsed);
 
             return;
         }
@@ -983,18 +821,18 @@ async function askAI() {
             error
         );
 
+        removeLoadingStatus();
 
         addChatMessage(
             "ai",
-            getFriendlyError(
-                error
-            )
+            getFriendlyError(error)
         );
+
+        showYourTurn();
 
     } finally {
 
-        chatBusy =
-            false;
+        chatBusy = false;
 
         removeLoadingStatus();
 
@@ -1012,9 +850,7 @@ async function apiRequest(
     identification = false
 ) {
 
-    const maxAttempts =
-        3;
-
+    const maxAttempts = 3;
 
     for (
         let attempt = 0;
@@ -1036,28 +872,16 @@ async function apiRequest(
                         },
 
                         body:
-                            JSON.stringify(
-                                payload
-                            )
+                            JSON.stringify(payload)
                     }
                 );
-
 
             const data =
                 await response.json();
 
-
-            if (
-                response.ok
-            ) {
-
+            if (response.ok) {
                 return data;
             }
-
-
-            /*
-               429 = rate limit.
-            */
 
             if (
                 response.status ===
@@ -1076,32 +900,26 @@ async function apiRequest(
                             6
                         );
 
-
                     setLoadingStatus(
                         `AI is busy right now — retrying in ${seconds}s...`
                     );
-
 
                     await sleep(
                         seconds * 1000
                     );
 
-
                     continue;
                 }
-
 
                 throw new Error(
                     "RATE_LIMIT"
                 );
             }
 
-
             throw new Error(
                 data?.error ||
                 `API error ${response.status}`
             );
-
 
         } catch (error) {
 
@@ -1113,7 +931,6 @@ async function apiRequest(
                 throw error;
             }
 
-
             if (
                 attempt <
                 maxAttempts - 1
@@ -1123,21 +940,17 @@ async function apiRequest(
                     "Connection hiccup — trying again..."
                 );
 
-
                 await sleep(
                     1500 *
                     (attempt + 1)
                 );
 
-
                 continue;
             }
-
 
             throw error;
         }
     }
-
 
     throw new Error(
         "AI request failed."
@@ -1156,21 +969,14 @@ function parseAIResponse(
 
     if (
         !content ||
-        typeof content !==
-        "string"
+        typeof content !== "string"
     ) {
 
         return null;
     }
 
-
     let cleaned =
         content.trim();
-
-
-    /*
-       Remove markdown fences.
-    */
 
     cleaned =
         cleaned
@@ -1188,16 +994,9 @@ function parseAIResponse(
             )
             .trim();
 
-
-    /*
-       Direct JSON.
-    */
-
     try {
 
-        return JSON.parse(
-            cleaned
-        );
+        return JSON.parse(cleaned);
 
     } catch (error) {
 
@@ -1206,21 +1005,11 @@ function parseAIResponse(
         );
     }
 
-
-    /*
-       Extract first JSON object.
-    */
-
     const firstBrace =
-        cleaned.indexOf(
-            "{"
-        );
+        cleaned.indexOf("{");
 
     const lastBrace =
-        cleaned.lastIndexOf(
-            "}"
-        );
-
+        cleaned.lastIndexOf("}");
 
     if (
         firstBrace !== -1 &&
@@ -1233,7 +1022,6 @@ function parseAIResponse(
                 firstBrace,
                 lastBrace + 1
             );
-
 
         try {
 
@@ -1249,52 +1037,33 @@ function parseAIResponse(
         }
     }
 
-
-    /*
-       Some models occasionally
-       return a plain question.
-    */
-
     if (
-        context ===
-        "chat"
+        context === "chat"
     ) {
 
         const looksLikeQuestion =
-            cleaned.includes(
-                "?"
-            );
-
+            cleaned.includes("?");
 
         if (
             looksLikeQuestion &&
-            cleaned.length <
-            500
+            cleaned.length < 500
         ) {
 
             console.warn(
                 "AI returned a plain question. Converting automatically."
             );
 
-
             return {
-
-                type:
-                    "question",
-
-                question:
-                    cleaned
-
+                type: "question",
+                question: cleaned
             };
         }
     }
-
 
     console.error(
         "Could not parse AI response:",
         content
     );
-
 
     return null;
 }
@@ -1304,9 +1073,7 @@ function parseAIResponse(
    EXTRACT AI CONTENT
 ========================================================= */
 
-function extractAIContent(
-    data
-) {
+function extractAIContent(data) {
 
     return (
         data
@@ -1314,10 +1081,12 @@ function extractAIContent(
             ?.choices?.[0]
             ?.message
             ?.content ||
+
         data
             ?.choices?.[0]
             ?.message
             ?.content ||
+
         ""
     );
 }
@@ -1333,58 +1102,48 @@ async function sendChatMessage() {
         return;
     }
 
-
     const input =
         document.getElementById(
             "chatInput"
         );
 
-
     if (!input) {
         return;
     }
 
-
     const text =
         input.value.trim();
-
 
     if (!text) {
         return;
     }
 
-
-    /*
-       Show user message.
-    */
+    removeYourTurn();
 
     addChatMessage(
         "user",
         text
     );
 
-
-    /*
-       Save user message.
-    */
-
     conversation.push({
-
-        role:
-            "user",
-
-        content:
-            text
-
+        role: "user",
+        content: text
     });
 
-
-    input.value =
-        "";
-
+    input.value = "";
 
     autoResizeInput();
 
+    updateChatButton();
+
+    /*
+       Small mobile-friendly delay before
+       the keyboard/layout changes again.
+    */
+
+    requestAnimationFrame(() => {
+        scrollChatToBottom();
+    });
 
     await askAI();
 }
@@ -1404,32 +1163,82 @@ function addChatMessage(
             "chatWindow"
         );
 
-
     if (!chatWindow) {
         return;
     }
-
 
     const message =
         document.createElement(
             "div"
         );
 
-
     message.className =
         `chat-message ${type}`;
 
-
     message.textContent =
         text;
-
 
     chatWindow.appendChild(
         message
     );
 
+    scrollChatToBottom();
+}
+
+
+/* =========================================================
+   YOUR TURN INDICATOR
+========================================================= */
+
+function showYourTurn() {
+
+    removeYourTurn();
+
+    const chatWindow =
+        document.getElementById(
+            "chatWindow"
+        );
+
+    if (!chatWindow) {
+        return;
+    }
+
+    const indicator =
+        document.createElement(
+            "div"
+        );
+
+    indicator.id =
+        "chatReady";
+
+    indicator.className =
+        "chat-ready";
+
+    indicator.innerHTML = `
+        <span class="chat-ready-dot"></span>
+        <span>Your turn</span>
+    `;
+
+    chatWindow.appendChild(
+        indicator
+    );
 
     scrollChatToBottom();
+
+    updateChatButton();
+}
+
+
+function removeYourTurn() {
+
+    const indicator =
+        document.getElementById(
+            "chatReady"
+        );
+
+    if (indicator) {
+        indicator.remove();
+    }
 }
 
 
@@ -1446,7 +1255,6 @@ function setLoadingStatus(
             "aiLoadingStatus"
         );
 
-
     if (!element) {
 
         const chatWindow =
@@ -1454,31 +1262,25 @@ function setLoadingStatus(
                 "chatWindow"
             );
 
-
         if (!chatWindow) {
             return;
         }
-
 
         element =
             document.createElement(
                 "div"
             );
 
-
         element.id =
             "aiLoadingStatus";
 
-
         element.className =
             "ai-loading-status";
-
 
         chatWindow.appendChild(
             element
         );
     }
-
 
     element.innerHTML = `
 
@@ -1504,18 +1306,11 @@ function setLoadingStatus(
 
     `;
 
-
     scrollChatToBottom();
-
-
-    /*
-       Small rotating status text.
-    */
 
     clearInterval(
         loadingTimer
     );
-
 
     const statuses = [
 
@@ -1529,38 +1324,31 @@ function setLoadingStatus(
 
     ];
 
-
-    let index =
-        0;
-
+    let index = 0;
 
     loadingTimer =
-        setInterval(
-            () => {
+        setInterval(() => {
 
-                const textElement =
-                    document.getElementById(
-                        "aiLoadingText"
-                    );
+            const textElement =
+                document.getElementById(
+                    "aiLoadingText"
+                );
 
+            if (
+                textElement &&
+                chatBusy
+            ) {
 
-                if (
-                    textElement &&
-                    chatBusy
-                ) {
+                textElement.textContent =
+                    statuses[
+                        index %
+                        statuses.length
+                    ];
 
-                    textElement.textContent =
-                        statuses[
-                            index %
-                            statuses.length
-                        ];
+                index++;
+            }
 
-                    index++;
-                }
-
-            },
-            2500
-        );
+        }, 2500);
 }
 
 
@@ -1570,19 +1358,14 @@ function removeLoadingStatus() {
         loadingTimer
     );
 
-
-    loadingTimer =
-        null;
-
+    loadingTimer = null;
 
     const element =
         document.getElementById(
             "aiLoadingStatus"
         );
 
-
     if (element) {
-
         element.remove();
     }
 }
@@ -1595,31 +1378,25 @@ function removeLoadingStatus() {
 function getThinkingStatus() {
 
     if (
-        questionCount ===
-        0
+        questionCount === 0
     ) {
 
         return "Thinking about where to start...";
     }
 
-
     if (
-        questionCount <
-        3
+        questionCount < 3
     ) {
 
         return "Getting to know your item...";
     }
 
-
     if (
-        questionCount <
-        6
+        questionCount < 6
     ) {
 
         return "Looking at the bigger picture...";
     }
-
 
     return "Figuring out what makes the most sense...";
 }
@@ -1641,26 +1418,7 @@ function getFriendlyError(
         return "The AI is a little busy right now. Give it a few seconds and try sending your answer again.";
     }
 
-
     return "I hit a temporary connection problem. Your conversation is still here — try sending your answer again.";
-}
-
-
-/* =========================================================
-   TYPING COMPATIBILITY
-========================================================= */
-
-function addTypingMessage() {
-
-    setLoadingStatus(
-        "Thinking..."
-    );
-}
-
-
-function removeTypingMessage() {
-
-    removeLoadingStatus();
 }
 
 
@@ -1675,20 +1433,16 @@ function scrollChatToBottom() {
             "chatWindow"
         );
 
-
     if (!chatWindow) {
         return;
     }
 
+    requestAnimationFrame(() => {
 
-    requestAnimationFrame(
-        () => {
+        chatWindow.scrollTop =
+            chatWindow.scrollHeight;
 
-            chatWindow.scrollTop =
-                chatWindow.scrollHeight;
-
-        }
-    );
+    });
 }
 
 
@@ -1703,22 +1457,18 @@ function updateChatButton() {
             "chatSend"
         );
 
-
     const input =
         document.getElementById(
             "chatInput"
         );
 
-
     if (!button) {
         return;
     }
 
-
     if (chatBusy) {
 
-        button.disabled =
-            true;
+        button.disabled = true;
 
         button.textContent =
             "Thinking…";
@@ -1726,11 +1476,9 @@ function updateChatButton() {
         return;
     }
 
-
     button.disabled =
         !input ||
         !input.value.trim();
-
 
     button.textContent =
         "Send →";
@@ -1748,15 +1496,12 @@ function autoResizeInput() {
             "chatInput"
         );
 
-
     if (!input) {
         return;
     }
 
-
     input.style.height =
         "auto";
-
 
     input.style.height =
         `${Math.min(
@@ -1779,11 +1524,9 @@ document.addEventListener(
                 "chatInput"
             );
 
-
         if (!input) {
             return;
         }
-
 
         input.addEventListener(
             "input",
@@ -1796,29 +1539,24 @@ document.addEventListener(
             }
         );
 
-
         input.addEventListener(
             "keydown",
             event => {
 
                 if (
-                    event.key ===
-                    "Enter" &&
+                    event.key === "Enter" &&
                     !event.shiftKey
                 ) {
 
                     event.preventDefault();
 
                     sendChatMessage();
-
                 }
 
             }
         );
 
-
         updateChatButton();
-
     }
 );
 
@@ -1836,24 +1574,20 @@ function showResult(
             "recommendation"
         );
 
-
     const confidence =
         document.getElementById(
             "confidence"
         );
-
 
     const reasoning =
         document.getElementById(
             "reasoningText"
         );
 
-
     const reflection =
         document.getElementById(
             "reflectionText"
         );
-
 
     const value =
         String(
@@ -1866,13 +1600,10 @@ function showResult(
             )
             .toUpperCase();
 
-
     if (recommendation) {
-
         recommendation.textContent =
             value;
     }
-
 
     if (confidence) {
 
@@ -1887,11 +1618,9 @@ function showResult(
                 )
             );
 
-
         confidence.textContent =
             `${number}% confidence`;
     }
-
 
     if (reasoning) {
 
@@ -1900,7 +1629,6 @@ function showResult(
             "The AI could not provide detailed reasoning.";
     }
 
-
     if (reflection) {
 
         reflection.textContent =
@@ -1908,34 +1636,26 @@ function showResult(
             "";
     }
 
-
     const icon =
         document.getElementById(
             "resultIcon"
         );
 
-
     if (icon) {
 
         const icons = {
 
-            KEEP:
-                "♡",
+            KEEP: "♡",
 
-            SELL:
-                "↗",
+            SELL: "↗",
 
-            DONATE:
-                "♡",
+            DONATE: "♡",
 
-            DISCARD:
-                "×",
+            DISCARD: "×",
 
-            RECYCLE:
-                "↻"
+            RECYCLE: "↻"
 
         };
-
 
         icon.textContent =
             icons[
@@ -1947,7 +1667,6 @@ function showResult(
             "✦";
     }
 
-
     showStep(5);
 }
 
@@ -1957,12 +1676,6 @@ function showResult(
 ========================================================= */
 
 async function analyzeItem() {
-
-    /*
-       Old HTML may still call this.
-       The new chat engine performs
-       the analysis automatically.
-    */
 
     if (
         !chatBusy &&
@@ -1980,69 +1693,50 @@ async function analyzeItem() {
 
 function newItem() {
 
-    selectedCategory =
-        "";
+    selectedCategory = "";
+    selectedRole = "";
 
-    selectedRole =
-        "";
+    uploadedImage = null;
+    uploadedImageData = "";
 
-    uploadedImage =
-        null;
+    itemType = "";
 
-    uploadedImageData =
-        "";
+    conversation = [];
 
-    itemType =
-        "";
+    questionCount = 0;
 
-    conversation =
-        [];
-
-    questionCount =
-        0;
-
-    chatBusy =
-        false;
-
+    chatBusy = false;
 
     removeLoadingStatus();
-
+    removeYourTurn();
 
     const fileInput =
         document.getElementById(
             "imageInput"
         );
 
-
     if (fileInput) {
-
-        fileInput.value =
-            "";
+        fileInput.value = "";
     }
-
 
     const preview =
         document.getElementById(
             "imagePreview"
         );
 
-
     if (preview) {
 
-        preview.src =
-            "";
+        preview.src = "";
 
         preview.classList.add(
             "hidden"
         );
     }
 
-
     const uploadContent =
         document.getElementById(
             "uploadContent"
         );
-
 
     if (uploadContent) {
 
@@ -2051,19 +1745,14 @@ function newItem() {
         );
     }
 
-
     const imageButton =
         document.getElementById(
             "imageContinue"
         );
 
-
     if (imageButton) {
-
-        imageButton.disabled =
-            true;
+        imageButton.disabled = true;
     }
-
 
     document
         .querySelectorAll(
@@ -2077,126 +1766,93 @@ function newItem() {
 
         });
 
-
     const categoryButton =
         document.getElementById(
             "categoryContinue"
         );
 
-
     if (categoryButton) {
-
-        categoryButton.disabled =
-            true;
+        categoryButton.disabled = true;
     }
-
 
     const roles =
         document.getElementById(
             "roles"
         );
 
-
     if (roles) {
-
-        roles.innerHTML =
-            "";
+        roles.innerHTML = "";
     }
-
 
     const roleButton =
         document.getElementById(
             "roleContinue"
         );
 
-
     if (roleButton) {
-
-        roleButton.disabled =
-            true;
+        roleButton.disabled = true;
     }
-
 
     const chatWindow =
         document.getElementById(
             "chatWindow"
         );
 
-
     if (chatWindow) {
-
-        chatWindow.innerHTML =
-            "";
+        chatWindow.innerHTML = "";
     }
-
 
     const chatInput =
         document.getElementById(
             "chatInput"
         );
 
-
     if (chatInput) {
 
-        chatInput.value =
-            "";
+        chatInput.value = "";
 
         chatInput.style.height =
             "auto";
     }
-
 
     const recommendation =
         document.getElementById(
             "recommendation"
         );
 
-
     if (recommendation) {
-
         recommendation.textContent =
             "UNCERTAIN";
     }
-
 
     const confidence =
         document.getElementById(
             "confidence"
         );
 
-
     if (confidence) {
-
         confidence.textContent =
             "—";
     }
-
 
     const reasoning =
         document.getElementById(
             "reasoningText"
         );
 
-
     if (reasoning) {
-
         reasoning.textContent =
             "Your reasoning will appear here.";
     }
-
 
     const reflection =
         document.getElementById(
             "reflectionText"
         );
 
-
     if (reflection) {
-
-        reflection.textContent =
-            "";
+        reflection.textContent = "";
     }
-
 
     showStep(1);
 }
@@ -2230,36 +1886,17 @@ function sleep(ms) {
 }
 
 
-function escapeHTML(
-    value
-) {
+function escapeHTML(value) {
 
-    return String(
-        value
-    )
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 
 console.log(
-    "Declutter.AI final script loaded."
+    "Declutter.AI final script loaded — chat UX updated."
 );
