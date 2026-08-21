@@ -28,22 +28,14 @@ body {
 
 button,
 textarea,
-select,
-input {
+input,
+select {
     font-family: inherit;
 }
 
 button {
     cursor: pointer;
     border: none;
-}
-
-a {
-    color: inherit;
-}
-
-a:visited {
-    color: inherit;
 }
 
 .hidden {
@@ -82,7 +74,6 @@ footer span {
 .nav-button {
     background: var(--text);
     color: white;
-
     padding: 11px 20px;
     border-radius: 100px;
 
@@ -104,9 +95,7 @@ footer span {
 .hero {
     max-width: 850px;
     margin: auto;
-
     text-align: center;
-
     padding: 110px 25px 150px;
 }
 
@@ -120,15 +109,13 @@ footer span {
     font-size: 12px;
     font-weight: 600;
 
-    background: rgba(255, 255, 255, 0.7);
-
+    background: rgba(255,255,255,0.7);
     margin-bottom: 30px;
 }
 
 .hero h1 {
     font-size: clamp(60px, 9vw, 110px);
     line-height: 0.92;
-
     letter-spacing: -6px;
 }
 
@@ -186,35 +173,9 @@ footer span {
 
 .microcopy {
     margin-top: 18px;
-
     font-size: 11px;
     color: #999;
-
     letter-spacing: 0.3px;
-}
-
-.secondary-button {
-    flex: 1;
-
-    padding: 16px;
-
-    background: var(--soft);
-
-    border-radius: 100px;
-
-    font-size: 13px;
-    font-weight: 600;
-
-    color: var(--text);
-
-    transition:
-        transform 0.2s ease,
-        background 0.2s ease;
-}
-
-.secondary-button:hover {
-    transform: translateY(-1px);
-    background: #e7e7e2;
 }
 
 
@@ -225,7 +186,6 @@ footer span {
 .how-section {
     max-width: 1100px;
     margin: auto;
-
     padding: 100px 30px;
 }
 
@@ -238,7 +198,6 @@ footer span {
     letter-spacing: 1.8px;
     font-weight: 700;
     color: #92928c;
-
     margin-bottom: 14px;
 }
 
@@ -258,7 +217,6 @@ footer span {
 .step {
     background: var(--surface);
     border: 1px solid var(--border);
-
     border-radius: var(--radius);
 
     padding: 30px;
@@ -294,7 +252,6 @@ footer span {
 .app {
     max-width: 680px;
     margin: auto;
-
     padding: 50px 25px 120px;
 }
 
@@ -305,29 +262,22 @@ footer span {
 .progress-bar {
     width: 100%;
     height: 3px;
-
     background: var(--border);
-
     border-radius: 20px;
-
     overflow: hidden;
 }
 
 #progress {
     width: 25%;
     height: 100%;
-
     background: var(--text);
-
     transition: width 0.4s ease;
 }
 
 #step-label {
     margin-top: 10px;
-
     font-size: 10px;
     color: #999;
-
     text-align: right;
 }
 
@@ -363,7 +313,6 @@ footer span {
     text-align: center;
 
     cursor: pointer;
-
     overflow: hidden;
 
     transition:
@@ -391,7 +340,6 @@ footer span {
     margin: auto auto 20px;
 
     border-radius: 50%;
-
     background: var(--soft);
 
     font-size: 25px;
@@ -412,7 +360,6 @@ footer span {
     height: 330px;
 
     object-fit: contain;
-
     background: #f1f1ed;
 }
 
@@ -425,7 +372,6 @@ footer span {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
-
     margin-bottom: 25px;
 }
 
@@ -433,13 +379,11 @@ footer span {
     background: white;
 
     border: 1px solid var(--border);
-
     border-radius: 18px;
 
     padding: 25px;
 
     text-align: left;
-
     font-size: 25px;
 
     transition: all 0.2s ease;
@@ -447,10 +391,8 @@ footer span {
 
 .category-grid button span {
     display: block;
-
     font-size: 13px;
     font-weight: 600;
-
     margin-top: 15px;
 }
 
@@ -462,14 +404,13 @@ footer span {
 
 
 /* =========================================================
-   ROLE SELECTION
+   ROLES
 ========================================================= */
 
 .role-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
-
     margin: 32px 0;
 }
 
@@ -490,8 +431,6 @@ footer span {
 
     text-align: left;
 
-    cursor: pointer;
-
     transition:
         transform 0.18s ease,
         border-color 0.18s ease,
@@ -501,108 +440,75 @@ footer span {
 
 .role-button:hover {
     transform: translateY(-1px);
-
     border-color: rgba(0, 0, 0, 0.25);
-
-    box-shadow:
-        0 6px 20px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
 }
 
 .role-button.selected {
     border-color: #171717;
-
     background: #f5f5f5;
-
-    box-shadow:
-        0 0 0 1px #171717;
-}
-
-.role-button:active {
-    transform: translateY(0);
+    box-shadow: 0 0 0 1px #171717;
 }
 
 
 /* =========================================================
-   CHAT — CONTEXT
+   ITEM CONFIRMATION
 ========================================================= */
 
 .item-confirmation {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
+    gap: 15px;
+
+    padding: 13px 16px;
 
     margin-bottom: 18px;
 
-    padding: 10px 14px;
-
-    background: #f1f1ec;
-
     border: 1px solid var(--border);
+    border-radius: 14px;
 
-    border-radius: 12px;
-
-    font-size: 12px;
-
-    color: #55554f;
+    background: #fafaf7;
 }
 
 .item-confirmation-label {
     font-size: 9px;
+    letter-spacing: 1.4px;
     font-weight: 700;
-
-    letter-spacing: 1.2px;
-
-    color: #999990;
+    color: #999;
 }
 
 .item-confirmation strong {
+    font-size: 12px;
     font-weight: 600;
-    color: #33332f;
 }
 
 
 /* =========================================================
-   CHAT WINDOW
+   CHAT
 ========================================================= */
 
 .chat-window {
     width: 100%;
 
-    min-height: 300px;
+    min-height: 280px;
     max-height: 520px;
 
     overflow-y: auto;
 
+    padding: 18px 4px 20px;
+
     display: flex;
     flex-direction: column;
-
     gap: 12px;
-
-    padding: 20px 4px;
 
     scroll-behavior: smooth;
 
     scrollbar-width: thin;
-    scrollbar-color: #d6d6d0 transparent;
-}
-
-.chat-window::-webkit-scrollbar {
-    width: 5px;
-}
-
-.chat-window::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.chat-window::-webkit-scrollbar-thumb {
-    background: #d6d6d0;
-    border-radius: 10px;
 }
 
 
-/* =========================================================
-   CHAT MESSAGES
-========================================================= */
+/* individual messages */
 
 .chat-message {
     max-width: 82%;
@@ -614,43 +520,51 @@ footer span {
     font-size: 14px;
     line-height: 1.55;
 
-    word-wrap: break-word;
-
-    animation: messageAppear 0.2s ease;
+    animation: chatMessageIn 0.2s ease;
 }
+
+
+/* AI */
 
 .chat-message.ai {
     align-self: flex-start;
 
     background: #ffffff;
-
     border: 1px solid var(--border);
 
-    color: #252521;
+    color: var(--text);
 
     border-bottom-left-radius: 6px;
 }
+
+
+/* USER */
 
 .chat-message.user {
     align-self: flex-end;
 
     background: #171717;
-
-    color: #ffffff;
+    color: white;
 
     border-bottom-right-radius: 6px;
 }
 
-@keyframes messageAppear {
-    from {
-        opacity: 0;
-        transform: translateY(4px);
-    }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* subtle AI label */
+
+.chat-message.ai::before {
+    content: "Declutter.AI";
+
+    display: block;
+
+    margin-bottom: 5px;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    letter-spacing: 0.6px;
+
+    color: #999;
 }
 
 
@@ -658,74 +572,63 @@ footer span {
    AI THINKING / LOADING
 ========================================================= */
 
+/*
+   IMPORTANT:
+   This is deliberately NOT styled like a normal chat bubble.
+   It should look like a temporary system status.
+*/
+
 .ai-loading-status {
     align-self: flex-start;
 
+    width: auto;
+    max-width: 90%;
+
     display: flex;
     align-items: center;
-
     gap: 10px;
 
-    max-width: 85%;
+    margin: 3px 0 4px;
+    padding: 5px 4px;
 
-    padding: 12px 15px;
-
-    background: #f3f3ef;
-
-    border: 1px solid #e5e5df;
-
-    border-radius: 16px;
-
-    color: #777770;
+    color: #999;
 
     font-size: 11px;
-
-    animation: messageAppear 0.2s ease;
-}
-
-.ai-loading-spinner {
-    width: 13px;
-    height: 13px;
-
-    border: 2px solid #d7d7d1;
-    border-top-color: #777770;
-
-    border-radius: 50%;
-
-    animation: spin 0.8s linear infinite;
-
-    flex-shrink: 0;
 }
 
 .ai-loading-content {
     display: flex;
     align-items: center;
-
-    gap: 6px;
+    gap: 7px;
 
     flex-wrap: wrap;
 }
 
 .ai-loading-content strong {
-    color: #44443f;
+    font-size: 10px;
+    color: #777;
+    font-weight: 600;
+}
 
-    font-size: 11px;
+.ai-loading-content span {
+    color: #999;
 }
 
 .ai-loading-dots {
-    display: inline-flex;
+    display: flex;
     gap: 3px;
-
     margin-left: 2px;
 }
 
 .ai-loading-dots i {
+    display: block;
+
     width: 3px;
     height: 3px;
 
-    background: #999990;
-
     border-radius: 50%;
+
+    background: #aaa;
 
     animation: loadingDot 1.2s infinite ease-in-out;
 }
@@ -738,24 +641,16 @@ footer span {
     animation-delay: 0.3s;
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
+.ai-loading-spinner {
+    width: 10px;
+    height: 10px;
 
-@keyframes loadingDot {
-    0%,
-    60%,
-    100% {
-        opacity: 0.3;
-        transform: translateY(0);
-    }
+    border: 1.5px solid #deded8;
+    border-top-color: #777;
 
-    30% {
-        opacity: 1;
-        transform: translateY(-2px);
-    }
+    border-radius: 50%;
+
+    animation: spinner 0.8s linear infinite;
 }
 
 
@@ -766,36 +661,40 @@ footer span {
 .chat-input-wrapper {
     display: flex;
     align-items: flex-end;
-
     gap: 8px;
 
     margin-top: 10px;
 
-    padding: 8px;
+    padding: 7px;
 
-    background: #ffffff;
+    background: white;
 
     border: 1px solid var(--border);
-
     border-radius: 18px;
 
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.chat-input-wrapper:focus-within {
+    border-color: #c8c8c2;
+
     box-shadow:
-        0 4px 20px rgba(0, 0, 0, 0.035);
+        0 4px 20px rgba(0, 0, 0, 0.04);
 }
 
 .chat-input {
     flex: 1;
 
-    min-width: 0;
+    width: 100%;
 
     min-height: 42px;
     max-height: 140px;
 
-    padding: 11px 10px;
-
     resize: none;
 
-    overflow-y: auto;
+    padding: 11px 12px;
 
     border: none;
     outline: none;
@@ -804,27 +703,32 @@ footer span {
 
     color: var(--text);
 
-    font-size: 14px;
-
-    line-height: 1.4;
-
-    /* Prevents iOS Safari from zooming when focusing. */
     font-size: 16px;
+    line-height: 1.45;
+
+    /*
+       16px is intentional:
+       mobile Safari/Chrome won't zoom
+       when the textarea receives focus.
+    */
 }
 
 .chat-input::placeholder {
-    color: #a0a09a;
+    color: #aaa;
 }
 
 .chat-send {
     flex-shrink: 0;
 
-    padding: 11px 16px;
+    min-width: 70px;
+    height: 42px;
+
+    padding: 0 14px;
+
+    border-radius: 13px;
 
     background: #171717;
     color: white;
-
-    border-radius: 13px;
 
     font-size: 12px;
     font-weight: 600;
@@ -840,7 +744,6 @@ footer span {
 
 .chat-send:disabled {
     opacity: 0.3;
-
     cursor: not-allowed;
 }
 
@@ -850,8 +753,7 @@ footer span {
     text-align: center;
 
     font-size: 10px;
-
-    color: #a0a09a;
+    color: #aaa;
 }
 
 
@@ -863,7 +765,6 @@ footer span {
     background: white;
 
     border: 1px solid var(--border);
-
     border-radius: 30px;
 
     padding: 45px 35px;
@@ -873,29 +774,23 @@ footer span {
 
 .result-icon {
     font-size: 40px;
-
     margin: 25px 0;
 }
 
 .recommendation-label {
     font-size: 10px;
-
     letter-spacing: 1.5px;
-
     color: #999;
 }
 
 #recommendation {
     font-size: 60px;
-
     letter-spacing: -3px;
-
     margin: 10px 0 25px;
 }
 
 .confidence {
     display: inline-flex;
-
     gap: 10px;
 
     background: var(--soft);
@@ -911,7 +806,6 @@ footer span {
     text-align: left;
 
     margin-top: 40px;
-
     padding: 25px;
 
     background: #f8f8f4;
@@ -921,28 +815,36 @@ footer span {
 
 .reasoning h3 {
     font-size: 13px;
-
     margin-bottom: 10px;
 }
 
 .reasoning p {
     color: var(--muted);
-
     font-size: 14px;
-
     line-height: 1.6;
 }
 
 .reflection-text {
-    margin-top: 15px;
+    margin-top: 12px;
 }
 
 .result-actions {
     display: flex;
-
     gap: 10px;
-
     margin-top: 25px;
+}
+
+.secondary-button {
+    flex: 1;
+
+    padding: 16px;
+
+    background: var(--soft);
+
+    border-radius: 100px;
+
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .result-actions .primary-button {
@@ -954,80 +856,104 @@ footer span {
    PROTOTYPE NOTE
 ========================================================= */
 
+/*
+   Covers both possible structures:
+   .prototype-section
+   .prototype-card
+
+   This gives it the "little note" feeling without
+   turning the entire page into a paper/leaves aesthetic.
+*/
+
 .prototype-section {
-    max-width: 680px;
+    width: 100%;
+
+    max-width: 760px;
 
     margin: 0 auto;
 
-    padding: 0 25px 70px;
+    padding: 25px 25px 90px;
 }
 
-.prototype-note {
+.prototype-section .prototype-card,
+.prototype-section > div {
     position: relative;
 
-    background: #f1f1ec;
+    background: #fffdf7;
 
-    border: 1px solid #e2e2dc;
+    border: 1px solid #e7e3d8;
 
-    border-radius: 20px;
+    border-radius: 18px;
 
     padding: 26px 28px;
 
-    color: #55554f;
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.035);
 
     text-align: left;
-
-    box-shadow: none;
 }
 
-.prototype-note h3 {
-    margin: 0 0 10px;
+.prototype-section .prototype-card::before,
+.prototype-section > div::before {
+    content: "NOTE";
 
-    font-size: 13px;
+    display: block;
 
+    margin-bottom: 10px;
+
+    font-size: 9px;
     font-weight: 700;
 
-    letter-spacing: 0.2px;
+    letter-spacing: 1.5px;
 
-    color: #22221f;
+    color: #a09c91;
 }
 
-.prototype-note p {
+.prototype-section h2,
+.prototype-section h3 {
+    font-size: 16px;
+    line-height: 1.35;
+
+    letter-spacing: -0.3px;
+
+    margin-bottom: 9px;
+}
+
+.prototype-section p {
+    color: #77746d;
+
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+.prototype-section a {
+    display: inline;
+    width: auto;
+
     margin: 0;
+    padding: 0;
 
-    font-size: 13px;
+    background: none !important;
+    border: none !important;
+    border-radius: 0 !important;
 
-    line-height: 1.7;
+    color: #5e5a52 !important;
 
-    color: #6f6f69;
-}
-
-.prototype-note p + p {
-    margin-top: 12px;
-}
-
-.prototype-note a {
-    color: #44443f;
+    font-size: inherit !important;
+    font-weight: 600;
 
     text-decoration: underline;
-
-    text-decoration-color: #c4c4bd;
-
+    text-decoration-color: #c8c3b8;
     text-underline-offset: 3px;
-
-    font-size: inherit;
-
-    font-weight: 500;
 
     transition:
         color 0.2s ease,
         text-decoration-color 0.2s ease;
 }
 
-.prototype-note a:hover {
-    color: #111111;
-
-    text-decoration-color: #777770;
+.prototype-section a:hover {
+    color: #171717 !important;
+    text-decoration-color: #171717;
 }
 
 
@@ -1042,41 +968,37 @@ footer {
 
     text-align: center;
 
-    color: #888882;
+    color: #888;
 }
 
 footer p {
-    margin: 0;
-
     font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
 
-    font-weight: 600;
-
-    color: #33332f;
-}
-
-footer p span {
-    opacity: 0.45;
+    letter-spacing: -0.3px;
 }
 
 footer small {
     display: block;
 
-    max-width: 500px;
+    margin-top: 7px;
 
-    margin: 9px auto 0;
+    font-size: 10px;
 
-    font-size: 11px;
+    color: #999;
 
-    line-height: 1.6;
-
-    color: #999991;
+    line-height: 1.5;
 }
 
-footer a {
-    color: #666660;
 
-    font-size: 11px;
+/* Footer links — no ugly blue browser defaults */
+
+footer a,
+footer a:visited {
+    color: #777 !important;
+
+    font-size: 10px;
 
     font-weight: 500;
 
@@ -1086,39 +1008,50 @@ footer a {
 }
 
 footer a:hover {
-    color: #111111;
+    color: #171717 !important;
 }
 
-.footer-links {
-    display: flex;
 
-    justify-content: center;
+/* =========================================================
+   ANIMATIONS
+========================================================= */
 
-    align-items: center;
+@keyframes chatMessageIn {
 
-    gap: 14px;
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
 
-    margin-top: 14px;
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 
-    font-size: 11px;
 }
 
-.footer-links a {
-    color: #777770;
+@keyframes spinner {
 
-    font-size: 11px;
+    to {
+        transform: rotate(360deg);
+    }
 
-    text-decoration: none;
 }
 
-.footer-links a:hover {
-    color: #22221f;
-}
+@keyframes loadingDot {
 
-.footer-divider {
-    color: #c5c5be;
+    0%,
+    60%,
+    100% {
+        opacity: 0.3;
+        transform: translateY(0);
+    }
 
-    font-size: 10px;
+    30% {
+        opacity: 1;
+        transform: translateY(-2px);
+    }
+
 }
 
 
@@ -1158,13 +1091,13 @@ footer a:hover {
     }
 
     .app {
-        padding-left: 20px;
-        padding-right: 20px;
+        padding-left: 18px;
+        padding-right: 18px;
     }
 
     .chat-window {
-        min-height: 280px;
-        max-height: 55vh;
+        min-height: 240px;
+        max-height: 58vh;
 
         padding-left: 0;
         padding-right: 0;
@@ -1172,88 +1105,45 @@ footer a:hover {
 
     .chat-message {
         max-width: 88%;
-
-        font-size: 14px;
     }
 
     .chat-input-wrapper {
         border-radius: 16px;
     }
 
-    /*
-       16px is intentional here.
-       iOS Safari won't zoom into the input.
-    */
     .chat-input {
+        /*
+           NEVER lower this below 16px on mobile.
+           Otherwise browsers may auto-zoom.
+        */
         font-size: 16px;
     }
 
     .chat-send {
-        padding: 11px 14px;
+        min-width: 64px;
+        padding: 0 11px;
     }
 
     .chat-hint {
         display: none;
     }
 
+    .item-confirmation {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+    }
+
     .prototype-section {
-        padding: 0 20px 55px;
+        padding: 20px 18px 65px;
     }
 
-    .prototype-note {
-        padding: 22px 21px;
-
-        border-radius: 18px;
-    }
-
-    .prototype-note p {
-        font-size: 12px;
-
-        line-height: 1.65;
-    }
-
-    .footer-links {
-        gap: 11px;
+    .prototype-section .prototype-card,
+    .prototype-section > div {
+        padding: 22px;
     }
 
     footer {
-        padding-left: 20px;
-        padding-right: 20px;
-    }
-}
-
-
-/* =========================================================
-   VERY SMALL PHONES
-========================================================= */
-
-@media (max-width: 380px) {
-
-    .navbar {
-        padding-left: 16px;
-        padding-right: 16px;
-    }
-
-    .nav-button {
-        padding: 10px 16px;
-    }
-
-    .hero {
-        padding-left: 18px;
-        padding-right: 18px;
-    }
-
-    .app {
-        padding-left: 16px;
-        padding-right: 16px;
-    }
-
-    .chat-message {
-        max-width: 92%;
-    }
-
-    .chat-send {
-        padding-left: 12px;
-        padding-right: 12px;
+        padding: 32px 20px 38px;
     }
 }
