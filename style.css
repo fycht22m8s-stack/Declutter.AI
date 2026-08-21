@@ -28,14 +28,22 @@ body {
 
 button,
 textarea,
-input,
-select {
+select,
+input {
     font-family: inherit;
 }
 
 button {
     cursor: pointer;
     border: none;
+}
+
+a {
+    color: inherit;
+}
+
+a:visited {
+    color: inherit;
 }
 
 .hidden {
@@ -74,6 +82,7 @@ footer span {
 .nav-button {
     background: var(--text);
     color: white;
+
     padding: 11px 20px;
     border-radius: 100px;
 
@@ -95,7 +104,9 @@ footer span {
 .hero {
     max-width: 850px;
     margin: auto;
+
     text-align: center;
+
     padding: 110px 25px 150px;
 }
 
@@ -109,13 +120,15 @@ footer span {
     font-size: 12px;
     font-weight: 600;
 
-    background: rgba(255,255,255,0.7);
+    background: rgba(255, 255, 255, 0.7);
+
     margin-bottom: 30px;
 }
 
 .hero h1 {
     font-size: clamp(60px, 9vw, 110px);
     line-height: 0.92;
+
     letter-spacing: -6px;
 }
 
@@ -180,6 +193,30 @@ footer span {
     letter-spacing: 0.3px;
 }
 
+.secondary-button {
+    flex: 1;
+
+    padding: 16px;
+
+    background: var(--soft);
+
+    border-radius: 100px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    color: var(--text);
+
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease;
+}
+
+.secondary-button:hover {
+    transform: translateY(-1px);
+    background: #e7e7e2;
+}
+
 
 /* =========================================================
    HOW IT WORKS
@@ -188,6 +225,7 @@ footer span {
 .how-section {
     max-width: 1100px;
     margin: auto;
+
     padding: 100px 30px;
 }
 
@@ -256,6 +294,7 @@ footer span {
 .app {
     max-width: 680px;
     margin: auto;
+
     padding: 50px 25px 120px;
 }
 
@@ -268,7 +307,9 @@ footer span {
     height: 3px;
 
     background: var(--border);
+
     border-radius: 20px;
+
     overflow: hidden;
 }
 
@@ -322,6 +363,7 @@ footer span {
     text-align: center;
 
     cursor: pointer;
+
     overflow: hidden;
 
     transition:
@@ -349,6 +391,7 @@ footer span {
     margin: auto auto 20px;
 
     border-radius: 50%;
+
     background: var(--soft);
 
     font-size: 25px;
@@ -369,6 +412,7 @@ footer span {
     height: 330px;
 
     object-fit: contain;
+
     background: #f1f1ed;
 }
 
@@ -389,11 +433,13 @@ footer span {
     background: white;
 
     border: 1px solid var(--border);
+
     border-radius: 18px;
 
     padding: 25px;
 
     text-align: left;
+
     font-size: 25px;
 
     transition: all 0.2s ease;
@@ -412,42 +458,6 @@ footer span {
 .category-grid button.selected {
     border-color: var(--text);
     transform: translateY(-2px);
-}
-
-
-/* =========================================================
-   QUESTIONS
-========================================================= */
-
-.question {
-    background: white;
-
-    border: 1px solid var(--border);
-
-    padding: 22px;
-    border-radius: 18px;
-
-    margin-bottom: 12px;
-}
-
-.question label {
-    display: block;
-
-    font-size: 14px;
-    font-weight: 600;
-
-    margin-bottom: 15px;
-}
-
-.question select {
-    width: 100%;
-
-    border: 1px solid var(--border);
-    border-radius: 12px;
-
-    padding: 13px;
-
-    background: #fafaf7;
 }
 
 
@@ -480,6 +490,8 @@ footer span {
 
     text-align: left;
 
+    cursor: pointer;
+
     transition:
         transform 0.18s ease,
         border-color 0.18s ease,
@@ -489,14 +501,20 @@ footer span {
 
 .role-button:hover {
     transform: translateY(-1px);
+
     border-color: rgba(0, 0, 0, 0.25);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.06);
 }
 
 .role-button.selected {
     border-color: #171717;
+
     background: #f5f5f5;
-    box-shadow: 0 0 0 1px #171717;
+
+    box-shadow:
+        0 0 0 1px #171717;
 }
 
 .role-button:active {
@@ -505,7 +523,7 @@ footer span {
 
 
 /* =========================================================
-   CHAT
+   CHAT — CONTEXT
 ========================================================= */
 
 .item-confirmation {
@@ -515,30 +533,37 @@ footer span {
 
     margin-bottom: 18px;
 
-    padding: 12px 15px;
+    padding: 10px 14px;
 
-    background: #f4f4f0;
+    background: #f1f1ec;
+
     border: 1px solid var(--border);
 
-    border-radius: 14px;
+    border-radius: 12px;
 
     font-size: 12px;
+
+    color: #55554f;
 }
 
 .item-confirmation-label {
     font-size: 9px;
     font-weight: 700;
-    letter-spacing: 1.4px;
-    color: #999;
+
+    letter-spacing: 1.2px;
+
+    color: #999990;
 }
 
 .item-confirmation strong {
-    font-size: 12px;
     font-weight: 600;
+    color: #33332f;
 }
 
 
-/* Chat window */
+/* =========================================================
+   CHAT WINDOW
+========================================================= */
 
 .chat-window {
     width: 100%;
@@ -547,21 +572,37 @@ footer span {
     max-height: 520px;
 
     overflow-y: auto;
-    overflow-x: hidden;
-
-    padding: 10px 4px 20px;
 
     display: flex;
     flex-direction: column;
+
     gap: 12px;
+
+    padding: 20px 4px;
 
     scroll-behavior: smooth;
 
-    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #d6d6d0 transparent;
+}
+
+.chat-window::-webkit-scrollbar {
+    width: 5px;
+}
+
+.chat-window::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-window::-webkit-scrollbar-thumb {
+    background: #d6d6d0;
+    border-radius: 10px;
 }
 
 
-/* Individual messages */
+/* =========================================================
+   CHAT MESSAGES
+========================================================= */
 
 .chat-message {
     max-width: 82%;
@@ -574,9 +615,8 @@ footer span {
     line-height: 1.55;
 
     word-wrap: break-word;
-    overflow-wrap: anywhere;
 
-    animation: messageAppear 0.18s ease;
+    animation: messageAppear 0.2s ease;
 }
 
 .chat-message.ai {
@@ -586,90 +626,96 @@ footer span {
 
     border: 1px solid var(--border);
 
+    color: #252521;
+
     border-bottom-left-radius: 6px;
 }
 
 .chat-message.user {
     align-self: flex-end;
 
-    background: var(--text);
-    color: white;
+    background: #171717;
+
+    color: #ffffff;
 
     border-bottom-right-radius: 6px;
 }
 
+@keyframes messageAppear {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 
 /* =========================================================
-   AI LOADING
+   AI THINKING / LOADING
 ========================================================= */
-
-/*
-   Loading is deliberately different from a normal AI
-   message. This prevents the user from thinking that
-   the previous message is still being typed.
-*/
 
 .ai-loading-status {
     align-self: flex-start;
 
     display: flex;
     align-items: center;
+
     gap: 10px;
 
-    width: fit-content;
-    max-width: 82%;
+    max-width: 85%;
 
-    padding: 10px 13px;
+    padding: 12px 15px;
 
-    color: #777;
+    background: #f3f3ef;
+
+    border: 1px solid #e5e5df;
+
+    border-radius: 16px;
+
+    color: #777770;
 
     font-size: 11px;
 
-    background: #f4f4f0;
-
-    border: 1px solid #e9e9e3;
-    border-radius: 14px;
-
-    animation: loadingAppear 0.2s ease;
-}
-
-.ai-loading-content {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-
-    min-width: 0;
-}
-
-.ai-loading-content strong {
-    color: #555;
-    font-size: 10px;
-    white-space: nowrap;
-}
-
-.ai-loading-content span {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    animation: messageAppear 0.2s ease;
 }
 
 .ai-loading-spinner {
     width: 13px;
     height: 13px;
 
-    flex: 0 0 13px;
-
-    border: 2px solid #d7d7d0;
-    border-top-color: #555;
+    border: 2px solid #d7d7d1;
+    border-top-color: #777770;
 
     border-radius: 50%;
 
     animation: spin 0.8s linear infinite;
+
+    flex-shrink: 0;
+}
+
+.ai-loading-content {
+    display: flex;
+    align-items: center;
+
+    gap: 6px;
+
+    flex-wrap: wrap;
+}
+
+.ai-loading-content strong {
+    color: #44443f;
+
+    font-size: 11px;
 }
 
 .ai-loading-dots {
-    display: flex;
+    display: inline-flex;
     gap: 3px;
+
     margin-left: 2px;
 }
 
@@ -677,7 +723,7 @@ footer span {
     width: 3px;
     height: 3px;
 
-    background: #888;
+    background: #999990;
 
     border-radius: 50%;
 
@@ -692,36 +738,24 @@ footer span {
     animation-delay: 0.3s;
 }
 
-
-/* =========================================================
-   YOUR TURN
-========================================================= */
-
-.chat-ready {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-
-    margin: 4px 0 9px 3px;
-
-    font-size: 10px;
-    font-weight: 600;
-
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-
-    color: #999;
-
-    animation: messageAppear 0.2s ease;
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-.chat-ready-dot {
-    width: 6px;
-    height: 6px;
+@keyframes loadingDot {
+    0%,
+    60%,
+    100% {
+        opacity: 0.3;
+        transform: translateY(0);
+    }
 
-    background: #171717;
-
-    border-radius: 50%;
+    30% {
+        opacity: 1;
+        transform: translateY(-2px);
+    }
 }
 
 
@@ -730,74 +764,64 @@ footer span {
 ========================================================= */
 
 .chat-input-wrapper {
-    position: relative;
-
     display: flex;
     align-items: flex-end;
+
     gap: 8px;
 
-    margin-top: 5px;
+    margin-top: 10px;
 
     padding: 8px;
 
-    background: white;
+    background: #ffffff;
 
     border: 1px solid var(--border);
+
     border-radius: 18px;
 
     box-shadow:
-        0 5px 20px rgba(0, 0, 0, 0.04);
-
-    transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
-}
-
-.chat-input-wrapper:focus-within {
-    border-color: #c5c5be;
-
-    box-shadow:
-        0 6px 25px rgba(0, 0, 0, 0.07);
+        0 4px 20px rgba(0, 0, 0, 0.035);
 }
 
 .chat-input {
-    width: 100%;
+    flex: 1;
 
-    min-height: 44px;
+    min-width: 0;
+
+    min-height: 42px;
     max-height: 140px;
 
+    padding: 11px 10px;
+
     resize: none;
+
+    overflow-y: auto;
 
     border: none;
     outline: none;
 
     background: transparent;
 
-    padding: 11px 10px;
-
-    /*
-       Important:
-       16px prevents automatic mobile browser zoom.
-    */
-    font-size: 16px;
-
-    line-height: 1.45;
-
     color: var(--text);
+
+    font-size: 14px;
+
+    line-height: 1.4;
+
+    /* Prevents iOS Safari from zooming when focusing. */
+    font-size: 16px;
 }
 
 .chat-input::placeholder {
-    color: #aaa;
+    color: #a0a09a;
 }
 
 .chat-send {
-    flex: 0 0 auto;
+    flex-shrink: 0;
 
-    min-height: 42px;
+    padding: 11px 16px;
 
-    padding: 0 17px;
-
-    background: var(--text);
+    background: #171717;
     color: white;
 
     border-radius: 13px;
@@ -815,17 +839,19 @@ footer span {
 }
 
 .chat-send:disabled {
-    opacity: 0.28;
+    opacity: 0.3;
+
     cursor: not-allowed;
 }
 
 .chat-hint {
-    margin-top: 8px;
-
-    font-size: 10px;
-    color: #aaa;
+    margin-top: 9px;
 
     text-align: center;
+
+    font-size: 10px;
+
+    color: #a0a09a;
 }
 
 
@@ -847,17 +873,21 @@ footer span {
 
 .result-icon {
     font-size: 40px;
+
     margin: 25px 0;
 }
 
 .recommendation-label {
     font-size: 10px;
+
     letter-spacing: 1.5px;
+
     color: #999;
 }
 
 #recommendation {
     font-size: 60px;
+
     letter-spacing: -3px;
 
     margin: 10px 0 25px;
@@ -865,6 +895,7 @@ footer span {
 
 .confidence {
     display: inline-flex;
+
     gap: 10px;
 
     background: var(--soft);
@@ -890,41 +921,113 @@ footer span {
 
 .reasoning h3 {
     font-size: 13px;
+
     margin-bottom: 10px;
 }
 
 .reasoning p {
     color: var(--muted);
+
     font-size: 14px;
+
     line-height: 1.6;
 }
 
 .reflection-text {
-    margin-top: 12px;
+    margin-top: 15px;
 }
 
 .result-actions {
     display: flex;
+
     gap: 10px;
 
     margin-top: 25px;
 }
 
-.secondary-button {
-    flex: 1;
-
-    padding: 16px;
-
-    background: var(--soft);
-
-    border-radius: 100px;
-
-    font-size: 13px;
-    font-weight: 600;
-}
-
 .result-actions .primary-button {
     flex: 1;
+}
+
+
+/* =========================================================
+   PROTOTYPE NOTE
+========================================================= */
+
+.prototype-section {
+    max-width: 680px;
+
+    margin: 0 auto;
+
+    padding: 0 25px 70px;
+}
+
+.prototype-note {
+    position: relative;
+
+    background: #f1f1ec;
+
+    border: 1px solid #e2e2dc;
+
+    border-radius: 20px;
+
+    padding: 26px 28px;
+
+    color: #55554f;
+
+    text-align: left;
+
+    box-shadow: none;
+}
+
+.prototype-note h3 {
+    margin: 0 0 10px;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    letter-spacing: 0.2px;
+
+    color: #22221f;
+}
+
+.prototype-note p {
+    margin: 0;
+
+    font-size: 13px;
+
+    line-height: 1.7;
+
+    color: #6f6f69;
+}
+
+.prototype-note p + p {
+    margin-top: 12px;
+}
+
+.prototype-note a {
+    color: #44443f;
+
+    text-decoration: underline;
+
+    text-decoration-color: #c4c4bd;
+
+    text-underline-offset: 3px;
+
+    font-size: inherit;
+
+    font-weight: 500;
+
+    transition:
+        color 0.2s ease,
+        text-decoration-color 0.2s ease;
+}
+
+.prototype-note a:hover {
+    color: #111111;
+
+    text-decoration-color: #777770;
 }
 
 
@@ -935,73 +1038,87 @@ footer span {
 footer {
     border-top: 1px solid var(--border);
 
-    padding: 50px 25px;
+    padding: 38px 25px 45px;
 
     text-align: center;
 
-    color: #777;
+    color: #888882;
 }
 
 footer p {
-    font-weight: 700;
-    color: var(--text);
+    margin: 0;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    color: #33332f;
+}
+
+footer p span {
+    opacity: 0.45;
 }
 
 footer small {
     display: block;
 
-    margin-top: 8px;
+    max-width: 500px;
+
+    margin: 9px auto 0;
+
+    font-size: 11px;
+
+    line-height: 1.6;
+
+    color: #999991;
+}
+
+footer a {
+    color: #666660;
+
+    font-size: 11px;
+
+    font-weight: 500;
+
+    text-decoration: none;
+
+    transition: color 0.2s ease;
+}
+
+footer a:hover {
+    color: #111111;
+}
+
+.footer-links {
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 14px;
+
+    margin-top: 14px;
 
     font-size: 11px;
 }
 
+.footer-links a {
+    color: #777770;
 
-/* =========================================================
-   ANIMATIONS
-========================================================= */
+    font-size: 11px;
 
-@keyframes messageAppear {
-    from {
-        opacity: 0;
-        transform: translateY(4px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    text-decoration: none;
 }
 
-@keyframes loadingAppear {
-    from {
-        opacity: 0;
-        transform: translateY(3px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.footer-links a:hover {
+    color: #22221f;
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
+.footer-divider {
+    color: #c5c5be;
 
-@keyframes loadingDot {
-    0%,
-    60%,
-    100% {
-        opacity: 0.25;
-        transform: translateY(0);
-    }
-
-    30% {
-        opacity: 1;
-        transform: translateY(-2px);
-    }
+    font-size: 10px;
 }
 
 
@@ -1041,30 +1158,22 @@ footer small {
     }
 
     .app {
-        padding-left: 16px;
-        padding-right: 16px;
-        padding-bottom: 60px;
-    }
-
-    .progress-container {
-        margin-bottom: 45px;
+        padding-left: 20px;
+        padding-right: 20px;
     }
 
     .chat-window {
-        max-height: min(55vh, 480px);
-        min-height: 260px;
+        min-height: 280px;
+        max-height: 55vh;
+
+        padding-left: 0;
+        padding-right: 0;
     }
 
     .chat-message {
         max-width: 88%;
-    }
 
-    .ai-loading-status {
-        max-width: 88%;
-    }
-
-    .ai-loading-content span {
-        max-width: 170px;
+        font-size: 14px;
     }
 
     .chat-input-wrapper {
@@ -1072,36 +1181,79 @@ footer small {
     }
 
     /*
-       16px is intentional.
-       Smaller inputs trigger automatic zoom
-       on iPhone/Safari.
+       16px is intentional here.
+       iOS Safari won't zoom into the input.
     */
-
     .chat-input {
-        font-size: 16px !important;
+        font-size: 16px;
     }
 
     .chat-send {
-        padding-left: 14px;
-        padding-right: 14px;
+        padding: 11px 14px;
     }
 
     .chat-hint {
-        font-size: 9px;
+        display: none;
+    }
+
+    .prototype-section {
+        padding: 0 20px 55px;
+    }
+
+    .prototype-note {
+        padding: 22px 21px;
+
+        border-radius: 18px;
+    }
+
+    .prototype-note p {
+        font-size: 12px;
+
+        line-height: 1.65;
+    }
+
+    .footer-links {
+        gap: 11px;
+    }
+
+    footer {
+        padding-left: 20px;
+        padding-right: 20px;
     }
 }
 
 
-/*
-   Prevent iOS from changing the viewport when
-   focusing the chat input.
-*/
+/* =========================================================
+   VERY SMALL PHONES
+========================================================= */
 
-@media screen and (max-width: 700px) {
-    html,
-    body {
-        width: 100%;
-        max-width: 100%;
-        overflow-x: hidden;
+@media (max-width: 380px) {
+
+    .navbar {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .nav-button {
+        padding: 10px 16px;
+    }
+
+    .hero {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .app {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .chat-message {
+        max-width: 92%;
+    }
+
+    .chat-send {
+        padding-left: 12px;
+        padding-right: 12px;
     }
 }
